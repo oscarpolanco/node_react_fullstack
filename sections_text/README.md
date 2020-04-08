@@ -46,3 +46,36 @@ First a little definition:
 #### How they work togheter
 
 When you're running a server on your local machine you're gonna be receiving `HTTP` request on a single port so if a browser on our machine makes a request will be received for a port on our machine then `node` will be listening that port and wait for information that flows in throw it; then `node` is going to take the information that flows into the port and send it to the `express` side of our application than `express` is gonna decide what little bit of logic is going to handle and response the incoming request. On `express` we create a `Route handlers` that are used to handling `HTTP` requests that ask for a specific service. When we got the response is going to be sent back to `node` then it gonna respond to the incoming request with that response that it received.
+
+### Adding our first route handler
+
+- First on the `server` directory we add a new file `index.js` (By convention we put that name).
+- Then need to `require` the `express` to the file:
+  `const express = require("express");`
+- Create a instance of `express`
+  `const app = express();`
+- Use the instance of `express` to handle a incoming request (in this example we use the `get` function to listen all request that came from `/`)
+
+```js
+app.get("/", (req, res) => {
+  res.send({ hi: "there" });
+});
+```
+
+    * app => Express App to register this route handler with
+    * get => Watch for incoming requests with this method (The `HTTP` methods indicate the type of the request) and `express` have access to a couple methods like the following:
+        - get => Get info
+        - post => Send info
+        - put => Update all the properties of something
+        - delete => Delete something
+        - patch => Update one or two properties of something
+    * '/' => Watch for requests trying to access '/'
+    * req => Object representing the incoming request
+    * res => Object representing the outgoing response
+    * res.send({ hi: 'there' }) => Immediately send some JSON back to who ever made this request
+
+- Finally `express` need to let know to `node` that it need to listen a port(in this case `5000`)
+  `app.listen(5000);`
+- Go to the `server` directory
+- Use the `node` command to start your server
+  `node index.js`
