@@ -115,3 +115,13 @@ When `Heroku` runs our app it will inject `environment variables` that are varia
 
 - Create a .gitignore file:
   We don't need all the files that we use on our app to get store in some place because some of then automatically generate so we don't need to upload that kind of files and the `.gitignore` will help use to this.
+
+### Installing Heroku on your local
+
+To install `Heroku CLI` you just need to follow these steps:
+
+- You will need to create an account on [Heroku](https://www.heroku.com/)
+- Then need to install the [git](https://git-scm.com/) on your local
+- Finally, follow [this steps](https://devcenter.heroku.com/articles/heroku-cli) to install `Heroku CLI`
+- On your terminal use `git --version` to check if the installation was successful
+- Then use `heroku -v` to see if you correctly installed `Heroku CLI`
