@@ -125,3 +125,28 @@ To install `Heroku CLI` you just need to follow these steps:
 - Finally, follow [this steps](https://devcenter.heroku.com/articles/heroku-cli) to install `Heroku CLI`
 - On your terminal use `git --version` to check if the installation was successful
 - Then use `heroku -v` to see if you correctly installed `Heroku CLI`
+
+### Verifying Heroku Deployment
+
+To do the first `deploy` to `Heroku` we just follow the next steps:
+
+- Create a `git` repository
+- Add all your changes to the `master` branch (By convention we `master` is our clean branch that represents production)
+- Make sure that on your terminal you are on the `master` branch(But is possible do the deploy on another branch)
+- On your terminal, you need to `login` to `Heroku` using the command `heroku login`.
+  It will happen one of 2 things:
+  - Ask your credential directly on the terminal
+  - Ask to press any key to open your browser; then press the `login` button and automatically it will `login` on your terminal
+- Then we need to create an app using the `heroku create` command.
+  This will automatically create an app that will be available on `Heroku` and will output on your terminal 2 links; the first one is the public URL of our app(This URL will have an auto-generated name) and the second link is the `deployment` target in witch we are gonna push our code.
+- Add the `Heroku` repository code to your `remote` using `git remote add heroku https:\\the.url.of.your.app` (It will do it atomically but in case that doesn't happen we can do it like this)
+- Use `git remote -v` to check if you got the `heroku` remote
+- Then deploy your add using `git push heroku master`
+  This will push your code to `Heroku` and use the branch that you currently are on your terminal as `master`(In case you need to push a specific folder go to the next `Deploy a sub-directory on Heroku`)
+- Use the `heroku open` command to open on your browser your app
+- If something fails you can use the `heroku logs` command to check the logs of the server.
+
+### Deploy a sub-directory on Heroku
+
+In this repository case, we add some configuration that we don't need to deploy for the moment that is why here we push a subdirectory to `Heroku`. I follow the same steps then before just with one change; we use a different command to deploy our changes
+`git subtree push --prefix your_directory_name heroku master`
