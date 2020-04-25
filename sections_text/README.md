@@ -79,3 +79,39 @@ app.get("/", (req, res) => {
 - Go to the `server` directory
 - Use the `node` command to start your server
   `node index.js`
+
+### Heroku checklist
+
+We gonna use [Heroku](https://www.heroku.com/) as our service provider of this project so we need to set our app to be ready to deploy to `Heroku` and we use a series of steps to accomplish this process. Here are the steps:
+
+- Dynamic port binding:
+  When you `deploy` an app to `Heroku` it will spect that you listen for `HTTP` request on a specific port and will tell us witch `port` you need to listen; because `Heroku` use the same server for multiples apps and needs to tell a specific port for your use. We will use a constant that uses the `process.env` for this purpose and use it on the `listen` function that we use before.
+
+```js
+const PORT = process.env.PORT || 5000;
+app.listen(PORT);
+```
+
+When `Heroku` runs our app it will inject `environment variables` that are variables that are set on the underline runtime that `node` is running on the top of and if the opportunity that `Heroku` has to pass `runtime` configurations. We need this because we don't know with `port` we will use on advance so we need to wait until we deploy our app to know it but on `production` we will have access to those `environment variables` so for `development` we will use a fix `port`.
+
+- Specify node environment:
+  `Heroku` by default use a specific version of `node` but can be a little out of date version so maybe some of your features have issues so we need to specify witch version of `node` we gonna use and we do it adding this `engines` with your `node` and `npm` version on your `package.json`.
+
+```js
+"engines": {
+  "node": "10.15.3",
+  "npm": "6.4.1"
+}
+```
+
+- Specify start script:
+  We need to specify a command that `Heroku` can use to `start` our app so we just need to add a `script` on our `package.json` for this propose using the same command that we use to run the project before.
+
+```js
+"scripts": {
+  "start": "node index.js"
+}
+```
+
+- Create a .gitignore file:
+  We don't need all the files that we use on our app to get store in some place because some of then automatically generate so we don't need to upload that kind of files and the `.gitignore` will help use to this.
