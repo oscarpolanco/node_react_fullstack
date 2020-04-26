@@ -204,4 +204,23 @@ To create the authentication flow with `Google` we are gonna be using a library 
 
 - `passport`:
   Is the core library is a set of very general functions, objects, and helpers that make authentication work nicely inside of `express`
-- `passport strategy`: To set authentication for a very specific provider. For each provider that you need to authenticate you will use a `strategy` for each one.
+- `passport strategy`:
+  To set authentication for a very specific provider. For each provider that you need to authenticate you will use a `strategy` for each one.
+
+### Passport setup
+
+- First we need to install `passport` and our `strategy` in this case for `Google`
+  `npm install --save passport passport-google-oauth20`
+
+- Then on the server `require` those 2 dependencies. For now we only need `Strategy` from the `passport-google-oauth20`
+
+```js
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+```
+
+- Call `passport` and give the `strategy` that you need for the authentication
+  `passport.use(new GoogleStrategy());`
+
+  - `new GoogleStrategy()`: Create a new instance of the `Google` authentication strategy and on the constructor we are going to send a configuration that we need to authenticate the user on our app.
+  - `passport.use()`: Since `passport` have a generic set of function, objects and helpers we need to let it know that is a new `stretegy` available and the users can be authenticated with it.
