@@ -150,3 +150,45 @@ To do the first `deploy` to `Heroku` we just follow the next steps:
 
 In this repository case, we add some configuration that we don't need to deploy for the moment that is why here we push a subdirectory to `Heroku`. I follow the same steps then before just with one change; we use a different command to deploy our changes
 `git subtree push --prefix your_directory_name heroku master`
+
+## Section 3: Authentication with Google OAuth
+
+We are gonna be using `Google OAuth` to authenticate the user of our app so here is a brief preview of the process that we gonna follow.
+
+- User click `Login`:
+  On the `client` the user will have a button that reads `login with google` that he is gonna press to authenticate. This will lunch a request to our `server`; for example `http://localhost:5000/auth/google`
+
+- Forward user's request to Google:
+  When the `server` detects that someone is trying to authenticate it will immediately forward the request to `Google` in other words if a user ask to log in it need to go to Google's server and grant permission so our app can read his profile. For example, using this URL: `https://google.com/auth?appid=123`
+  We are gonna address later what is the `appid`.
+
+- Ask user if they grant permission:
+  When we redirect the user to `Google` it will show a permission page(It will ask the user that an app is asking to access its Google profile).
+
+- User grants permission
+  The user just need to grant the permission using the instructions on the permission page and immediately will be redirect to our add to one of our handlers; for example: `http://localhost:5000/auth/google/callback?code=456`
+  The `route` of the handler is just an example that could be anything that you want but the `code` is a place as a `query parameter` by `Google`.
+
+- Put the user on hold, take the `code` from the URL:
+  We gonna put the user on hold and we will take the code from the URL to continue processing the authentication process sending another request.
+
+- Send a request to `Google` with the `code` included:
+  We do a follow-up request including the `code` to Google's servers, in other words, you tell Google's servers that you have a user pending in our server and we are sure that he grants us access to his profile so here is the code to prove it and we need to exchange this code for information about this user.
+
+- `Google` sees the `code` in the URL, replies with details about this user:
+  `Google` will see the `code` and will check if that is legit and if it is will reply with some useful information to our server.
+
+- Get user details, create a new record in the database:
+  The details that `Google` replies to us will we store in the database that will help us to continue with the authentication process.
+
+- Set user ID in a cookie for this user:
+  We gonna do a process to uniquely identify the user for future requests.
+
+- Logged in:
+  Get the user to another `route` and we will consider the user log in. For example, the `route` could be: `http://localhost:3000`.
+
+- I need some resources from the API:
+  So when the user makes an action or needs something from the API we gonna do a follow request with a cookie include.
+
+- This request has a cookie with user id equal to `123`:
+  The `id:123` is just an example following the previews URLs examples. Now all the request that the user makes will have this cookie with some of his information.
