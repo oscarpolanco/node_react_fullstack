@@ -224,3 +224,30 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
   - `new GoogleStrategy()`: Create a new instance of the `Google` authentication strategy and on the constructor we are going to send a configuration that we need to authenticate the user on our app.
   - `passport.use()`: Since `passport` have a generic set of function, objects and helpers we need to let it know that is a new `stretegy` available and the users can be authenticated with it.
+
+### Enabling Google OAuth API
+
+To use the `Google strategy` that we install before we need 2 things: a `client id` and a `client secret` provided by the `Google OAuth` service so here we gonna go step by step on that process.
+
+#### Steps to create a project and obtain the client's id and secret
+
+- Go to: https://console.cloud.google.com
+- On your dashboard at the top click on the `CREATE PROJECT` button
+- Add the `project name`
+- Click the `create` button
+- At the top left corner click on the `hamberguer` menu
+- Click the option `API & Services`
+- On the submenu click on the `OAuth consent screen`
+- In the left side menu choose `OAuth consent screen`
+- Check the `External` option
+- Click on `CREATE`
+- Fill the `Application name` (put the same that you use before)
+- Scroll to the button and click `Save`
+- On the left side menu click on the `Credentials` option
+- Click on `CREATE CREDENTIALS` at the top of the `credentials` page
+- Select `OAuth client ID`
+- On the `Application type` options check the `Web application`
+- Scrool to the `Authorized JavaScript Origins` an put your authorize url; in this case since we are on the develoment proccess we put `http://localhost:5000`
+- Scroll to `Authorized redirect URI` and put the url that `Google` will reach after the client allow your app
+- Click on the `Create` button
+- Copy your `cliend id` and `client secret`
