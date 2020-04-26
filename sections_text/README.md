@@ -251,3 +251,8 @@ To use the `Google strategy` that we install before we need 2 things: a `client 
 - Scroll to `Authorized redirect URI` and put the url that `Google` will reach after the client allow your app
 - Click on the `Create` button
 - Copy your `cliend id` and `client secret`
+
+#### Client id and client secret
+
+- `Client id`: It's a public token that identify your app for to Google's server.
+- `Client secret`: Private token that give access to our app.
