@@ -192,3 +192,16 @@ We are gonna be using `Google OAuth` to authenticate the user of our app so here
 
 - This request has a cookie with user id equal to `123`:
   The `id:123` is just an example following the previews URLs examples. Now all the request that the user makes will have this cookie with some of his information.
+
+### Passport overview
+
+To create the authentication flow with `Google` we are gonna be using a library called `Passport js`. This library is going to handle from `Forward user's request to Google` to `Google sees the code in the URL, replies with details about this user` (see the preview topic about the authentication flow). There are 2 things you need to be aware when you are using `Passport js`:
+
+- First `passport` doesn't automate the complete auth process that is why we need to add some code in specific parts to get the auth process complete working. This will give you the feeling that you don't understand the complete auth process and just adding some code of things that you don't have a clear view.
+- The second one is that sometimes we don't get how the library is structure because you don't only install 1 library at least you need to install 2 libraries to get this to work.
+
+#### Passport library component
+
+- `passport`:
+  Is the core library is a set of very general functions, objects, and helpers that make authentication work nicely inside of `express`
+- `passport strategy`: To set authentication for a very specific provider. For each provider that you need to authenticate you will use a `strategy` for each one.
