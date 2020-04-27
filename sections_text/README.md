@@ -235,7 +235,7 @@ To use the `Google strategy` that we install before we need 2 things: a `client 
 - On your dashboard at the top click on the `CREATE PROJECT` button
 - Add the `project name`
 - Click the `create` button
-- At the top left corner click on the `hamberguer` menu
+- At the top left corner click on the `hamburger` menu
 - Click the option `API & Services`
 - On the submenu click on the `OAuth consent screen`
 - In the left side menu choose `OAuth consent screen`
@@ -243,16 +243,35 @@ To use the `Google strategy` that we install before we need 2 things: a `client 
 - Click on `CREATE`
 - Fill the `Application name` (put the same that you use before)
 - Scroll to the button and click `Save`
-- On the left side menu click on the `Credentials` option
+- On the left side, menu click on the `Credentials` option
 - Click on `CREATE CREDENTIALS` at the top of the `credentials` page
 - Select `OAuth client ID`
-- On the `Application type` options check the `Web application`
-- Scrool to the `Authorized JavaScript Origins` an put your authorize url; in this case since we are on the develoment proccess we put `http://localhost:5000`
-- Scroll to `Authorized redirect URI` and put the url that `Google` will reach after the client allow your app
+- On the `Application type`, options check the `Web application`
+- Scroll to the `Authorized JavaScript Origins` an put your authorize URL; in this case, since we are on the development process we put `http://localhost:5000`
+- Scroll to `Authorized redirect URI` and put the URL that `Google` will reach after the client allow your app
 - Click on the `Create` button
-- Copy your `cliend id` and `client secret`
+- Copy your `client id` and `client secret`
 
 #### Client id and client secret
 
-- `Client id`: It's a public token that identify your app for to Google's server.
-- `Client secret`: Private token that give access to our app.
+- `Client id`: It's a public token that identifies your app for Google's server.
+- `Client secret`: Private token that gives access to our app.
+
+#### Add configuration for the strategy
+
+You just need to add your app credential that we generate before and send the `callback` URL to redirect users that came from that URL on an object and a second parameter is a function that we gonna user later.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.clientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (accesToken) => {
+      console.log(accesToken);
+    }
+  )
+);
+```
