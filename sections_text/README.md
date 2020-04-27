@@ -275,3 +275,20 @@ passport.use(
   )
 );
 ```
+
+#### Adding a handler to begin the authentication process
+
+We need a `route handler` that triggers when the user wants to authenticate. We for the example aad `/auth/google`.
+
+```js
+app.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
+```
+
+- `passport.authenticate`: Instead of sending a function like we normally do as a second argument, we use `passport` to begin the authentication process.
+  - `google` parameter: Is the name of the strategy we're gonna use. Internally `GoogleStrategy` has this name as its identifier.
+  - `scope: ["profile", "email"]`: Specify to Google's servers what access we want to have inside of this user profile. In this case, we are asking for the user's information and its email.
