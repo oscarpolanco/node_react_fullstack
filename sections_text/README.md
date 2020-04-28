@@ -310,3 +310,28 @@ app.get("/auth/google/callback", passport.authenticate("google"));
 ```
 
 This look like the first `route handler` that we set but the difference is that when you get the request you will receive the `code` that Google sends to you as a `query parameter` so `passport` when it sees this it will know that the user is no trigger the authentication process instead they want to convert this `code` into profile information. So if you test and login at this point we will log a big string on the terminal that is the function that we send on the configuration of the `passport.use` configuration and get on the login page on the browser because we didn't set anything to be redirected.
+
+### Access and refresh token
+
+On the function that we are running when Google retrive to our callback url with a `code` we can get some more information than the `access token` so we gonna check some of this things that we can get when we authenticate.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (accesToken, refreshToken, profile, done) => {
+      console.log("access token", accesToken);
+      console.log("refresh token", refreshToken);
+      console.log("profile:", profile);
+    }
+  )
+);
+```
+
+- `Access token`: Is the `token` that will allow us to do something on the user behalf like modify his account in some fashion.
+- `Refresh token`: Will allow us to refresh the `access token` because it expired in some amount of time and we can use this `refresh token` to automatically refresh the `access token`.
+- `Profile`: Have the user information.
