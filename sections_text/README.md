@@ -150,3 +150,188 @@ To do the first `deploy` to `Heroku` we just follow the next steps:
 
 In this repository case, we add some configuration that we don't need to deploy for the moment that is why here we push a subdirectory to `Heroku`. I follow the same steps then before just with one change; we use a different command to deploy our changes
 `git subtree push --prefix your_directory_name heroku master`
+
+## Section 3: Authentication with Google OAuth
+
+We are gonna be using `Google OAuth` to authenticate the user of our app so here is a brief preview of the process that we gonna follow.
+
+- User click `Login`:
+  On the `client` the user will have a button that reads `login with google` that he is gonna press to authenticate. This will lunch a request to our `server`; for example `http://localhost:5000/auth/google`
+
+- Forward user's request to Google:
+  When the `server` detects that someone is trying to authenticate it will immediately forward the request to `Google` in other words if a user ask to log in it need to go to Google's server and grant permission so our app can read his profile. For example, using this URL: `https://google.com/auth?appid=123`
+  We are gonna address later what is the `appid`.
+
+- Ask user if they grant permission:
+  When we redirect the user to `Google` it will show a permission page(It will ask the user that an app is asking to access its Google profile).
+
+- User grants permission
+  The user just need to grant the permission using the instructions on the permission page and immediately will be redirect to our add to one of our handlers; for example: `http://localhost:5000/auth/google/callback?code=456`
+  The `route` of the handler is just an example that could be anything that you want but the `code` is a place as a `query parameter` by `Google`.
+
+- Put the user on hold, take the `code` from the URL:
+  We gonna put the user on hold and we will take the code from the URL to continue processing the authentication process sending another request.
+
+- Send a request to `Google` with the `code` included:
+  We do a follow-up request including the `code` to Google's servers, in other words, you tell Google's servers that you have a user pending in our server and we are sure that he grants us access to his profile so here is the code to prove it and we need to exchange this code for information about this user.
+
+- `Google` sees the `code` in the URL, replies with details about this user:
+  `Google` will see the `code` and will check if that is legit and if it is will reply with some useful information to our server.
+
+- Get user details, create a new record in the database:
+  The details that `Google` replies to us will we store in the database that will help us to continue with the authentication process.
+
+- Set user ID in a cookie for this user:
+  We gonna do a process to uniquely identify the user for future requests.
+
+- Logged in:
+  Get the user to another `route` and we will consider the user log in. For example, the `route` could be: `http://localhost:3000`.
+
+- I need some resources from the API:
+  So when the user makes an action or needs something from the API we gonna do a follow request with a cookie include.
+
+- This request has a cookie with user id equal to `123`:
+  The `id:123` is just an example following the previews URLs examples. Now all the request that the user makes will have this cookie with some of his information.
+
+### Passport overview
+
+To create the authentication flow with `Google` we are gonna be using a library called `Passport js`. This library is going to handle from `Forward user's request to Google` to `Google sees the code in the URL, replies with details about this user` (see the preview topic about the authentication flow). There are 2 things you need to be aware when you are using `Passport js`:
+
+- First `passport` doesn't automate the complete auth process that is why we need to add some code in specific parts to get the auth process complete working. This will give you the feeling that you don't understand the complete auth process and just adding some code of things that you don't have a clear view.
+- The second one is that sometimes we don't get how the library is structure because you don't only install 1 library at least you need to install 2 libraries to get this to work.
+
+#### Passport library component
+
+- `passport`:
+  Is the core library is a set of very general functions, objects, and helpers that make authentication work nicely inside of `express`
+- `passport strategy`:
+  To set authentication for a very specific provider. For each provider that you need to authenticate you will use a `strategy` for each one.
+
+### Passport setup
+
+- First we need to install `passport` and our `strategy` in this case for `Google`
+  `npm install --save passport passport-google-oauth20`
+
+- Then on the server `require` those 2 dependencies. For now we only need `Strategy` from the `passport-google-oauth20`
+
+```js
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+```
+
+- Call `passport` and give the `strategy` that you need for the authentication
+  `passport.use(new GoogleStrategy());`
+
+  - `new GoogleStrategy()`: Create a new instance of the `Google` authentication strategy and on the constructor we are going to send a configuration that we need to authenticate the user on our app.
+  - `passport.use()`: Since `passport` have a generic set of function, objects and helpers we need to let it know that is a new `stretegy` available and the users can be authenticated with it.
+
+### Enabling Google OAuth API
+
+To use the `Google strategy` that we install before we need 2 things: a `client id` and a `client secret` provided by the `Google OAuth` service so here we gonna go step by step on that process.
+
+#### Steps to create a project and obtain the client's id and secret
+
+- Go to: https://console.cloud.google.com
+- On your dashboard at the top click on the `CREATE PROJECT` button
+- Add the `project name`
+- Click the `create` button
+- At the top left corner click on the `hamburger` menu
+- Click the option `API & Services`
+- On the submenu click on the `OAuth consent screen`
+- In the left side menu choose `OAuth consent screen`
+- Check the `External` option
+- Click on `CREATE`
+- Fill the `Application name` (put the same that you use before)
+- Scroll to the button and click `Save`
+- On the left side, menu click on the `Credentials` option
+- Click on `CREATE CREDENTIALS` at the top of the `credentials` page
+- Select `OAuth client ID`
+- On the `Application type`, options check the `Web application`
+- Scroll to the `Authorized JavaScript Origins` an put your authorize URL; in this case, since we are on the development process we put `http://localhost:5000`
+- Scroll to `Authorized redirect URI` and put the URL that `Google` will reach after the client allow your app
+- Click on the `Create` button
+- Copy your `client id` and `client secret`
+
+#### Client id and client secret
+
+- `Client id`: It's a public token that identifies your app for Google's server.
+- `Client secret`: Private token that gives access to our app.
+
+#### Add configuration for the strategy
+
+You just need to add your app credential that we generate before and send the `callback` URL to redirect users that came from that URL on an object and a second parameter is a function that we gonna user later.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.clientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (accesToken) => {
+      console.log(accesToken);
+    }
+  )
+);
+```
+
+#### Adding a handler to begin the authentication process
+
+We need a `route handler` that triggers when the user wants to authenticate. We for the example aad `/auth/google`.
+
+```js
+app.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
+```
+
+- `passport.authenticate`: Instead of sending a function like we normally do as a second argument, we use `passport` to begin the authentication process.
+  - `google` parameter: Is the name of the strategy we're gonna use. Internally `GoogleStrategy` has this name as its identifier.
+  - `scope: ["profile", "email"]`: Specify to Google's servers what access we want to have inside of this user profile. In this case, we are asking for the user's information and its email.
+
+### Authorized redirect URL
+
+If you test at this moment the route that we did to begin the authentication process(`auth/google`) you will redirect correctly to Google's URL but will have a `redirect_uri_mismatch`. This happens because of one of our `query parameters` in this case the `rediirect_uri` that we send it with the correct value but is not set to be a recognize redirect URL on Google's servers. This is a security measure to protect the users to be redirect to a malicious site to steal his information.
+
+To fix this error you just need to copy the URL that is shown on the error that you get on the browser than on the `Authorize redirect URIs` you will need to add the URL that we set as our `callback`(for this example `http://localhost:5000/auth/google/callback`) and then click `save`.
+
+You will need to wait a couple of minutes to check if it works because Google's servers need time to add the `callback` URL to their acceptance URL list.
+
+### Oauth callbacks
+
+Now that we get to the Google login screen we need to create the `route handler` that handles the `callback` URL that the user is redirected after login. For this like the others before we don't use a function to run when we receive a request that matches the pattern of the `route handler`; we use `passport`.
+
+```js
+app.get("/auth/google/callback", passport.authenticate("google"));
+```
+
+This look like the first `route handler` that we set but the difference is that when you get the request you will receive the `code` that Google sends to you as a `query parameter` so `passport` when it sees this it will know that the user is no trigger the authentication process instead they want to convert this `code` into profile information. So if you test and login at this point we will log a big string on the terminal that is the function that we send on the configuration of the `passport.use` configuration and get on the login page on the browser because we didn't set anything to be redirected.
+
+### Access and refresh token
+
+On the function that we are running when Google retrive to our callback url with a `code` we can get some more information than the `access token` so we gonna check some of this things that we can get when we authenticate.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (accesToken, refreshToken, profile, done) => {
+      console.log("access token", accesToken);
+      console.log("refresh token", refreshToken);
+      console.log("profile:", profile);
+    }
+  )
+);
+```
+
+- `Access token`: Is the `token` that will allow us to do something on the user behalf like modify his account in some fashion.
+- `Refresh token`: Will allow us to refresh the `access token` because it expired in some amount of time and we can use this `refresh token` to automatically refresh the `access token`.
+- `Profile`: Have the user information.
