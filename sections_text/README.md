@@ -358,3 +358,39 @@ In the preview section, we focus only on the `OAuth` part of the login flow; now
 - The server gets the profile and instead of creating a new record it will search on the database if this record exists
 - If it doesn't exist will create the record if it exists will set the cookie for the user
 - If the user is set will be considered login again
+
+### Introduction to MongoDB
+
+At the begining we check how we will build our app. We said that we gonna have a `React` app that comunicate via `Http` request with some `JSON` data with `expess/node` api then this `express/node` api will comunicate with `Mongo DB` to get or store information but on our case we gonna have a intermediary to comunicate the `express/node` api with `Mongo DB` call `Mongoose`. `Mongoose` is a library that wrap up some of the most commun `Mongo DB` operations and we don't have to do it ourself.
+
+#### How Mongo store information internally
+
+`Mongo DB` internally store records on different `collections` that can have many records. So in one `Mongo DB` instance we can have may `collections`; for example users, posts or payments.
+
+Inside of a `collections` we can have many records. For example, for our app, we can have `collections` users that have many records that represent each user that can log in to our application. Every single record is a piece of `JSON` or a plain `js` object in other words every single record is a collection of key-value pairs. One of the characteristics of `Mongo DB` is that it is `schemaless` this means that on the same `collection` we can have records with its own set of properties. For example:
+
+```js
+//User collection's
+{
+  id: 1,
+  name: "bill",
+  height: 150
+}
+{
+  id: 2,
+  name: "alex",
+  age: 30
+}
+{
+  id: 3,
+  name: "zane"
+}
+```
+
+#### Mongoose
+
+Like we see before on `Mongo DB` we have a `collection` with many different `records` but we need a way to represent this in our `js` app context so `mongoose` will help us with that.
+
+In the `Mongoose` context, we will have a `Model class` that represents a `Mongo DB collection` so a `model class` is used to access a single `collection` of `Mongo DB`. A `model class` have a bunch of function that will work with the `collection` like find a `record` or `update` a `record`.
+
+Also `mongoose` gives us access to `model instances` that is a `js` object that represents a single `record`.
