@@ -341,3 +341,20 @@ passport.use(
 ### The theory of authentication
 
 So at this point what really means to be authenticated on our app or why we care about it. First when we need something of our server we do an `Http` request and that request is `stateless` this means that between any given 2 separate requests `Http` can't share information(This is by default); so we need a way to have some source of information that helps us to store this state that we are missing with the default `Http` configuration. To handle this we use authentication where a user does a request to the server with his credential to login; now the server decides if the credential is valid; if this is the case the user is considered log in then the server sends a request with a unique piece of information(cookie; token; etc) that need to be add in every follow-up request so the server can identify the identity of the user.
+
+### Singing users with OAuth
+
+In the preview section, we focus only on the `OAuth` part of the login flow; now we gonna dive a little bit on the complete flow that the user will have from the first time that asks to sing up to the logout.
+
+- First, our user ask our server to sing him up so it will begin the `Google` flow to ask the user the profile information
+- The server asks the database to create a record to the new user
+- The database(MongoDB) will store. For our add, we gonna extract the `Google id` from the user profile to store it on our database.
+- Then the server will create a cookie with unique information that represents the user that sign up
+- After that, the server will send that cookie to the browser
+- Now the user can do any follow-up request to the server and will have access to the information that it needs
+- Then the user can logout when it needs
+- When it does log out the server will unset the cookie and now the cookie will be invalid and the user will be considered logout
+- Also now the user needs to log in again. He will do the `Google OAuth` process again and send its profile
+- The server gets the profile and instead of creating a new record it will search on the database if this record exists
+- If it doesn't exist will create the record if it exists will set the cookie for the user
+- If the user is set will be considered login again
