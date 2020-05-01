@@ -394,3 +394,36 @@ Like we see before on `Mongo DB` we have a `collection` with many different `rec
 In the `Mongoose` context, we will have a `Model class` that represents a `Mongo DB collection` so a `model class` is used to access a single `collection` of `Mongo DB`. A `model class` have a bunch of function that will work with the `collection` like find a `record` or `update` a `record`.
 
 Also `mongoose` gives us access to `model instances` that is a `js` object that represents a single `record`.
+
+### MongoDB Atlas setup and configuration and Moongose setup
+
+For this project, we gonna use a remote service that creates a `Mongo` database for use that is called `Mongo DB Atlas`. Here are the steps to set up your `Mongo DB atlas` account and database.
+
+- Go to => https://www.mongodb.com/cloud/atlas
+- Click the `Try Free` button
+- Create your `Mongo DB` user account
+- After creating the account click on `create cluster`
+- Choose the `free` option
+- Then choose the `AWS` option and `Virginia`
+- Scroll down and put the name of your app in the `cluster name` option
+- Click on `create cluster`
+- Know you will see a dashboard page of your cluster
+- Click the `connect` button
+- Click on `add your current IP address`
+- Add the IP address that appears
+- Add your `user`(name and password - is better to use the autogenerate password)
+- Then on the `connect` button, you will see `choose the connect method`
+- Choose `connect your application`
+- Copy the connection String Only and use it on your code
+- On your terminal go to the `server` directory
+- Install `mongoose` using `npm install --save mongoose`
+- Go to the `index.js` file on your editor
+- Require `mongoose`
+  `const mongoose = require("mongoose");`
+- Use the `mongoose` connect function sending your `mongo` URI
+  `mongoose.connect(my_mongo_uri);`
+- Know run your `server` and you are connected
+
+#### Note:
+
+Maybe you will see a couple of `warnings` on your terminal when you run the server but its completely fine. These `warnings` produce automatically by `mongo`. The `mongo` database has a `driver` layer that let outside people to interact with the database so the `warnings` are produced by the way that `mongoose` interacts with `mongo` so we can't ignore this `warnings`.
