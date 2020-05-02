@@ -462,3 +462,55 @@ Like we mentioned before the `model class` represents the `collections` of `Mong
 
 - On `Mongo DB` you have many `records` in a `collection` and those `records` can have their unique set of properties but using `mongoose` a `Schema` requires to know with properties will have those `records` so we kind of lose the ability to have a set of individuals properties on a `record`.
 - On the `Schema` you can add and subtract properties as you need without issues.
+
+### Saving model intances
+
+Now that we create the `schema` and `mongo` knows that we need a `collection` that use that `schema`; we need to begin the process of saving data on using the `model` instance. To do this we gonna follow the next steps:
+
+- First on the file that we got the `passport` logic(In the case of the example we separate it from the `index.js` to a file call `paasport.js`) we need to get the `model` normally we `require` what we need on the file but for `models classes` we don't gonna be using `require` statement; the reason is that sometimes when your running your code on a testing enviroment your `models` will be `require` multiple times using a `require` statement and that will confuse `mongoose` that will belive that you're trying loading multiple `models` with the same name and that will throw an error so we gonna `require` a little bit different.
+
+```js
+const mongoose = require("mongoose");
+
+const User = mongoose.model("users");
+```
+
+We `require` the `mongoose` module then we use the `model` function with the name of the `collection`(in this example `users`) to pull/fetch from `mongo` that specific `collection`. Previously we unse the `model` function to load the `schema` to a `collection` sending 2 parameters so to pull/fetch something like this we use the same function with just one argument.
+
+- Then we need to create a instance of the `model class` to create a record.
+
+```js
+new User({
+  googleId: profile.id,
+}).save();
+```
+
+We use the `new` keyword on the `collection` that we just fetch sending an object with all properties that the `record` will have but this is not enough because we at this moment the `record` will exist just on the `js` world so we need to call the `save` function to actually store the `record` on `mongo`.
+
+At the end we create the new `record` using the callback function that is call at the en of the `passport` authentication process.
+
+```js
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const mongoose = require("mongoose");
+const keys = require("../config/keys");
+
+const User = mongoose.model("users");
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (profile) => {
+      new User({
+        googleId: profile.id,
+      }).save();
+    }
+  )
+);
+```
+
+But if you are following this example at this moment maybe you have an `error` that said `schema hasn't been registered for model users`. This produce by the order of operations that we set on our `index.js` file; this mean that we when we separate the `passport` logic put the `require` statement before the `model calls` so we just need to invert the order so the `sever` use first the `models class` file instead of the `passport` file. When you fix this you can use the authentication flow then check `mongo DB atlas` to see if we got the the `collection` create and a new record.
