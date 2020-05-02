@@ -427,3 +427,38 @@ For this project, we gonna use a remote service that creates a `Mongo` database 
 #### Note:
 
 Maybe you will see a couple of `warnings` on your terminal when you run the server but its completely fine. These `warnings` produce automatically by `mongo`. The `mongo` database has a `driver` layer that let outside people to interact with the database so the `warnings` are produced by the way that `mongoose` interacts with `mongo` so we can't ignore this `warnings`.
+
+### Mongoose model classes
+
+Like we mentioned before the `model class` represents the `collections` of `Mongo DB`. This `models` will help us to create or make operations that we need to do with `mongo`. Here are the steps to do it:
+
+- On this project, we will add the files that we need to create the `model` on a directory called `models` inside of the `server` directory.
+- On the `models` directory create a file call `User.js`; that will represent the `user` collection
+- Then inside of `User.js` require `mongoose`
+  `const mongoose = require("mongoose");`
+- Then create get the property `Schema` from `mongoose`
+  `const { Schema } = mongoose;`
+- Now we need to create the `schema` for our collection
+
+  ```js
+  const userSchema = new Schema({
+    googleId: String,
+  });
+  ```
+
+  We create the `user` and will have a property called `googleId`(for this example we gonna store the id that we receive when the user does the authentication process) that receive a `string`.
+
+- Now we need to tell `mongo` that a `schema` needs to be createds
+  `mongoose.model("users", userSchema);`
+
+  In the `mongoose model` function we send the name of the `collection` and the `schema` that will have the record.
+
+- Now we need to run this files; so go to the `index.js` file and require the `User.js` file
+  `require("./models/User");`
+
+  At this moment every time we run our `server`, this configuration will run.
+
+#### Notes
+
+- On `Mongo DB` you have many `records` in a `collection` and those `records` can have their unique set of properties but using `mongoose` a `Schema` requires to know with properties will have those `records` so we kind of lose the ability to have a set of individuals properties on a `record`.
+- On the `Schema` you can add and subtract properties as you need without issues.
