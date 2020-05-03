@@ -504,7 +504,7 @@ passport.use(
       clientSecret: keys.googleClientSecret,
       callbackURL: "/auth/google/callback",
     },
-    (profile) => {
+    (accessToken, refreshToken, profile) => {
       new User({
         googleId: profile.id,
       }).save();
@@ -552,7 +552,7 @@ passport.use(
       clientSecret: keys.googleClientSecret,
       callbackURL: "/auth/google/callback",
     },
-    (profile, done) => {
+    (accessToken, refreshToken, profile, done) => {
       User.findOne({ googleId: profile.id }).then((existingUser) => {
         if (existingUser) {
           done(null, existingUser);
@@ -598,7 +598,7 @@ We just need to send as a second parameter the `unique` piace of information in 
 
 ### Deserialize user
 
-Now we need to make a function that gives users the ability to eliminate the information of the cookie when the user wants to `logout` so we define a deserialize function. To do this we just use the `deserializeUser` function of `passport`.
+Now we need to make a function that gives users the ability to convert the information of the cookie to a user. To do this we just use the `deserializeUser` function of `passport`.
 
 ```js
 passport.deserializeUser((id, done) => {
@@ -652,3 +652,30 @@ app.use(passport.session());
 ```
 
 In the last title of this section we gonna have a more deep view of this process.
+
+### Testing authentication
+
+At this moment we complete a process to have cookies and that is added to the `request` object that we use on our `route handlers` so this means that you can build a `route handler` and should have the user information on the request.
+
+We separate our `routes` in a file called `authRoutes.js` and build an example `route handler` to test that handles the `/api/current_user` endpoint.
+
+```js
+const passport = require("passport");
+
+module.exports = (app) => {
+  app.get(
+    "/auth/google",
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+    })
+  );
+
+  app.get("/auth/google/callback", passport.authenticate("google"));
+
+  app.get("/api/current_user", (req, res) => {
+    res.send(req.user);
+  });
+};
+```
+
+Know go to the `/auth/google` endpoint on your browser and begin the process(We still don't handle what we see after authenticate) then go to the `/api/current_user` and you should see the `user` information.
