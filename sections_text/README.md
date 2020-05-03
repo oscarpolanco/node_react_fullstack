@@ -614,3 +614,41 @@ Like the previous serialize function `deserializeUser` receive a function with 2
 - `done`: This is a callback function that we need to call every time we finish some task using `passport` that receives an `error` object(`null` if everything is fine) and a piece of information relate with the task that we perform.
 
 On that function we need to convert the `id` that we receive into a `model user` and that is what we send to the `done` function.
+
+### Enabling cookies
+
+Out of the box `express` doesn't now how to handle cookies so we gonna install a module call `cookie-session` to manage cookies on out application. To do this on the `server` directory on your terminal use the following command:
+`npm install --save cookie-session`
+
+Now `require` the `cookie-session` and `passport` modules on the `index.js` file.
+
+```js
+const cookieSession = require("cookie-session");
+const passport = require("passport");
+```
+
+Why `passport`? is beacuase we need to tell `passport` that keep track of the `session` of the user and need to do it using cookies.
+
+At this moment we begin to use those modules; first with `express`. We need to add the following `express` function passing the `cookieSession` object with a configuration.
+
+```js
+app.use(
+  cookieSession({
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    keys: [keys.cookieKey],
+  })
+);
+```
+
+- `maxAge`: Is the time the cookie exist on the browser before is automaclly expire. Recive a time in milliseconds.
+  For the example we use 30 days: `30 days * 24 hours in a day * 60 minutes on a hour * 60 seconds in a minute * 1000 milliseconds in one second`.
+- `keys`: Key use to encript the cookie and can be any ramdon set of characters. The `keys` property as you notice recive an `array` that can recive multiple set of characters and ramdon pick one to encript every cookie.
+
+Finally we need to tell `passport` to use cookies to handle authentication. We add the following code:
+
+```js
+app.use(passport.initialize());
+app.use(passport.session());
+```
+
+In the last title of this section we gonna have a more deep view of this process.
