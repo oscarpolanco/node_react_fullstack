@@ -679,3 +679,16 @@ module.exports = (app) => {
 ```
 
 Know go to the `/auth/google` endpoint on your browser and begin the process(We still don't handle what we see after authenticate) then go to the `/api/current_user` and you should see the `user` information.
+
+### Logout users
+
+To logout users `passport` attach a `logout` function to the `request` object that we recive on the `route handler`. For this example we use the `/api/logout` endpoint.
+
+```js
+app.get("/api/logout", (req, res) => {
+  req.logout();
+  res.send(req.user);
+});
+```
+
+Know each time you reach that endpoint `passport` will delete the information of the cookie and the user will consider to be `logout`.
