@@ -570,3 +570,28 @@ passport.use(
 ```
 
 Since the `save` process is an asynchronous task we need to use `then` to get the `user` that we just created.
+
+### Encoding Users
+
+At this point we can trigger the authentication process; process the profile that we get and tell `passport` that you are done with the process but we still need some `unique` identifier for the user's browser that will be in every follow up request that the user do. For this we gonne set a cookie that the server will send to the client. To preform the task of create the cookie we need first to create that `unique` identifier and `passport` will help us with that; defining a `serializeUser` function and finally `passport` will add this `unique` identifier into the cookie for us.
+
+To define this `serializeUser` function we use de `passport` object that we `require` before an call a function using the same serialize name.
+
+```js
+passport.serializeUser((user, done) => {});
+```
+
+`passport.serializeUser` recive a function with 2 arguments
+
+- `user`: Is our `user model` and the same `model` that we retrive from the database and send it to the `done` function in the `callback` that `passport` do after we successfully have the user's profile
+- `done`: Is a callback function that we need to call every time we finish some task using `passport` that recive an `error` object(`null` if everything is fine) and a peice of information relate with the task that we preforme.
+
+Now we need to send this `unique` piece of information so `passport` can create the cookie for use.
+
+```js
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+```
+
+We just need to send as a second parameter the `unique` piace of information in the `done` function. There is something that may be confusing; we are not sending the `Google id` as a second parameter of the `done` function we are sending the `mongo id` of the `record`(`Mongo DB` autogenerate and `_id` for every `record` when is created) because if in the future we want to add different `strategies` to authenticate we can't ensure that all of then have an `Google id` but we allways have the `id` of the `record`.
