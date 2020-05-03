@@ -595,3 +595,22 @@ passport.serializeUser((user, done) => {
 ```
 
 We just need to send as a second parameter the `unique` piace of information in the `done` function. There is something that may be confusing; we are not sending the `Google id` as a second parameter of the `done` function we are sending the `mongo id` of the `record`(`Mongo DB` autogenerate and `_id` for every `record` when is created) because if in the future we want to add different `strategies` to authenticate we can't ensure that all of then have an `Google id` but we allways have the `id` of the `record`.
+
+### Deserialize user
+
+Now we need to make a function that gives users the ability to eliminate the information of the cookie when the user wants to `logout` so we define a deserialize function. To do this we just use the `deserializeUser` function of `passport`.
+
+```js
+passport.deserializeUser((id, done) => {
+  User.findById(id).then((user) => {
+    done(null, user);
+  });
+});
+```
+
+Like the previous serialize function `deserializeUser` receive a function with 2 arguments:
+
+- `id`: Is the `id` that we send on the `serializeUser` function.
+- `done`: This is a callback function that we need to call every time we finish some task using `passport` that receives an `error` object(`null` if everything is fine) and a piece of information relate with the task that we perform.
+
+On that function we need to convert the `id` that we receive into a `model user` and that is what we send to the `done` function.
