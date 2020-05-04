@@ -692,3 +692,50 @@ app.get("/api/logout", (req, res) => {
 ```
 
 Know each time you reach that endpoint `passport` will delete the information of the cookie and the user will consider to be `logout`.
+
+### A deeper dive
+
+As we mention before we gonna have a deeper look at some of the topics that we did and don't explain too much in some of the previews titles.
+
+#### Middleware
+
+On the `index.js` at this moment we have 3 `app.use` calls and give then 3 different objects to then. These calls are referred to as a `middleware` that are small functions that can be used to modify any incoming `request` that came to our app before that they get to our `route handlers`. An example on this application is when an authenticated user sends a `request` to our app; that `request` will pass by 3 `middleware`(The `cookie-session`, `passport.initialize` and `passport.session`) that will make some minor adjustments to the incoming `request`. Here is the process that we follow on the example:
+
+- First the `cookie.session` will extract the cookie data
+- The `passport` functions will pull the user `id` out of the cookie data
+- `desirializeUser` turn that user `id` into a user
+- The information that we need is added to the `req` object as `req.user`
+
+### cookieSession
+
+Like we mentioned before the `cookieSession` extract the data of a cookie and added to the `req` object wit a property call `session` like this `req.session`. Internally `passport` doesn't check the actual cookie it checks the `req.session` that was added then pull the data out of there. So if you send the `req.session` on the `/api/current_user` you will see an object like this:
+
+```
+passport: {
+  user: "the_user_id"
+}
+```
+
+And the `id` is what was we store on the cookie and the one that we are gonna use to retrieve the user data with the `desirializeUser` function.
+
+### cookie-session vs express-session
+
+If you check the `express` documentation you will see that they recommend different libraries to manage cookies or sessions that are `cookie-session`(the library that we are using) and `express-session`.
+
+As we mention before `cookie-session` we can assign an amount of data in a cookie then take the cookie data an assign it to the `req.session` property. So the cookie is the `session` and has all the data related to the current `session`.
+
+The `express-session` library handle the `session` differently; it stores a reference to a `session` inside the cookie and then takes that `session id` from the cookie and look up all the relevant information from `session store`(some database of service that store the relevant data of a `session`). For example:
+
+```js
+        cookie             MongoDB
+|| session_id = 123|| ==> || 123 || ==> || { userid: 123, username: 'test' }  ||
+                          || 456 || ==> || { userid: 555, username: 'test1' } ||
+                          || 788 || ==> || { userid: 10, username: 'test3' }  ||
+```
+
+So the key difference between the 2 is how the key information that we want on the cookie is store. Also, another difference is that we can store as much data that we want on the `session store` because it is a database that we can set to store as much data as we want too but the `cookie-session` we are limited to 4 kb.
+
+### Notes:
+
+- You don't need to pass all the `request` to a `middleware` you can configure that some of them don't use it.
+- The example object of the `cookieSession` is in terms of our application so you can get a different result on the object inside of the `passport` property.
