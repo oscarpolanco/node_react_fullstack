@@ -834,3 +834,17 @@ if (process.env.NODE_ENV === "production") {
 ```
 
 Now we need to commit the `key.js` file and the `prod.js` file that will be needed when we deploy our app to `Heroku`. The `dev.js` file will be `ignore`.
+
+### Set enviroment variables on Heroku
+
+To set the `enviroment variables` that we use on the `prod.js` file just need to follow the next steps:
+
+- Sing in to your `Heroku` account
+- Choose the app that you create for this example
+- Choose the `setting` option at the top
+- Search for the `Config Vars` section
+- Click on the `Reveal Config Vars` button
+- Add the names that you add on the `prod.js` and the values that they gonna have. For example `process.env.GOOGLE_CLIENT_ID` => `GOOGLE_CLIENT_ID`
+- Click `add`
+
+Know you can deploy the changes that we have since the last time we deploy our app using the same [steps](https://github.com/oscarpolanco/node_react_fullstack/tree/master/sections_text#verifying-heroku-deployment) that we mention before.
