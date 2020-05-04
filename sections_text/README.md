@@ -335,3 +335,407 @@ passport.use(
 - `Access token`: Is the `token` that will allow us to do something on the user behalf like modify his account in some fashion.
 - `Refresh token`: Will allow us to refresh the `access token` because it expired in some amount of time and we can use this `refresh token` to automatically refresh the `access token`.
 - `Profile`: Have the user information.
+
+## Section 4: Adding MongoDB
+
+### The theory of authentication
+
+So at this point what really means to be authenticated on our app or why we care about it. First when we need something of our server we do an `Http` request and that request is `stateless` this means that between any given 2 separate requests `Http` can't share information(This is by default); so we need a way to have some source of information that helps us to store this state that we are missing with the default `Http` configuration. To handle this we use authentication where a user does a request to the server with his credential to login; now the server decides if the credential is valid; if this is the case the user is considered log in then the server sends a request with a unique piece of information(cookie; token; etc) that need to be add in every follow-up request so the server can identify the identity of the user.
+
+### Singing users with OAuth
+
+In the preview section, we focus only on the `OAuth` part of the login flow; now we gonna dive a little bit on the complete flow that the user will have from the first time that asks to sing up to the logout.
+
+- First, our user ask our server to sing him up so it will begin the `Google` flow to ask the user the profile information
+- The server asks the database to create a record to the new user
+- The database(MongoDB) will store. For our add, we gonna extract the `Google id` from the user profile to store it on our database.
+- Then the server will create a cookie with unique information that represents the user that sign up
+- After that, the server will send that cookie to the browser
+- Now the user can do any follow-up request to the server and will have access to the information that it needs
+- Then the user can logout when it needs
+- When it does log out the server will unset the cookie and now the cookie will be invalid and the user will be considered logout
+- Also now the user needs to log in again. He will do the `Google OAuth` process again and send its profile
+- The server gets the profile and instead of creating a new record it will search on the database if this record exists
+- If it doesn't exist will create the record if it exists will set the cookie for the user
+- If the user is set will be considered login again
+
+### Introduction to MongoDB
+
+At the begining we check how we will build our app. We said that we gonna have a `React` app that comunicate via `Http` request with some `JSON` data with `expess/node` api then this `express/node` api will comunicate with `Mongo DB` to get or store information but on our case we gonna have a intermediary to comunicate the `express/node` api with `Mongo DB` call `Mongoose`. `Mongoose` is a library that wrap up some of the most commun `Mongo DB` operations and we don't have to do it ourself.
+
+#### How Mongo store information internally
+
+`Mongo DB` internally store records on different `collections` that can have many records. So in one `Mongo DB` instance we can have may `collections`; for example users, posts or payments.
+
+Inside of a `collections` we can have many records. For example, for our app, we can have `collections` users that have many records that represent each user that can log in to our application. Every single record is a piece of `JSON` or a plain `js` object in other words every single record is a collection of key-value pairs. One of the characteristics of `Mongo DB` is that it is `schemaless` this means that on the same `collection` we can have records with its own set of properties. For example:
+
+```js
+//User collection's
+{
+  id: 1,
+  name: "bill",
+  height: 150
+}
+{
+  id: 2,
+  name: "alex",
+  age: 30
+}
+{
+  id: 3,
+  name: "zane"
+}
+```
+
+#### Mongoose
+
+Like we see before on `Mongo DB` we have a `collection` with many different `records` but we need a way to represent this in our `js` app context so `mongoose` will help us with that.
+
+In the `Mongoose` context, we will have a `Model class` that represents a `Mongo DB collection` so a `model class` is used to access a single `collection` of `Mongo DB`. A `model class` have a bunch of function that will work with the `collection` like find a `record` or `update` a `record`.
+
+Also `mongoose` gives us access to `model instances` that is a `js` object that represents a single `record`.
+
+### MongoDB Atlas setup and configuration and Moongose setup
+
+For this project, we gonna use a remote service that creates a `Mongo` database for use that is called `Mongo DB Atlas`. Here are the steps to set up your `Mongo DB atlas` account and database.
+
+- Go to => https://www.mongodb.com/cloud/atlas
+- Click the `Try Free` button
+- Create your `Mongo DB` user account
+- After creating the account click on `create cluster`
+- Choose the `free` option
+- Then choose the `AWS` option and `Virginia`
+- Scroll down and put the name of your app in the `cluster name` option
+- Click on `create cluster`
+- Know you will see a dashboard page of your cluster
+- Click the `connect` button
+- Click on `add your current IP address`
+- Add the IP address that appears
+- Add your `user`(name and password - is better to use the autogenerate password)
+- Then on the `connect` button, you will see `choose the connect method`
+- Choose `connect your application`
+- Copy the connection String Only and use it on your code
+- On your terminal go to the `server` directory
+- Install `mongoose` using `npm install --save mongoose`
+- Go to the `index.js` file on your editor
+- Require `mongoose`
+  `const mongoose = require("mongoose");`
+- Use the `mongoose` connect function sending your `mongo` URI
+  `mongoose.connect(my_mongo_uri);`
+- Know run your `server` and you are connected
+
+#### Note:
+
+Maybe you will see a couple of `warnings` on your terminal when you run the server but its completely fine. These `warnings` produce automatically by `mongo`. The `mongo` database has a `driver` layer that let outside people to interact with the database so the `warnings` are produced by the way that `mongoose` interacts with `mongo` so we can't ignore this `warnings`.
+
+### Mongoose model classes
+
+Like we mentioned before the `model class` represents the `collections` of `Mongo DB`. This `models` will help us to create or make operations that we need to do with `mongo`. Here are the steps to do it:
+
+- On this project, we will add the files that we need to create the `model` on a directory called `models` inside of the `server` directory.
+- On the `models` directory create a file call `User.js`; that will represent the `user` collection
+- Then inside of `User.js` require `mongoose`
+  `const mongoose = require("mongoose");`
+- Then create get the property `Schema` from `mongoose`
+  `const { Schema } = mongoose;`
+- Now we need to create the `schema` for our collection
+
+  ```js
+  const userSchema = new Schema({
+    googleId: String,
+  });
+  ```
+
+  We create the `user` and will have a property called `googleId`(for this example we gonna store the id that we receive when the user does the authentication process) that receive a `string`.
+
+- Now we need to tell `mongo` that a `schema` needs to be createds
+  `mongoose.model("users", userSchema);`
+
+  In the `mongoose model` function we send the name of the `collection` and the `schema` that will have the record.
+
+- Now we need to run this files; so go to the `index.js` file and require the `User.js` file
+  `require("./models/User");`
+
+  At this moment every time we run our `server`, this configuration will run.
+
+#### Notes
+
+- On `Mongo DB` you have many `records` in a `collection` and those `records` can have their unique set of properties but using `mongoose` a `Schema` requires to know with properties will have those `records` so we kind of lose the ability to have a set of individuals properties on a `record`.
+- On the `Schema` you can add and subtract properties as you need without issues.
+
+### Saving model instances
+
+Now that we create the `schema` and `mongo` knows that we need a `collection` that uses that `schema`; we need to begin the process of saving data on using the `model` instance. To do this we gonna follow the next steps:
+
+- First, on the file that we got the `passport` logic(In the case of the example we separate it from the `index.js` to a file called `paasport.js`) we need to get the `model` normally we `require` what we need on the file but for `models classes` we don't gonna be using `require` statement; the reason is that sometimes when you're running your code on a testing environment your `models` will be `require` multiple times using a `require` statement and that will confuse `mongoose` that will belive that you're trying loading multiple `models` with the same name and that will throw an error so we gonna `require` a little bit different.
+
+```js
+const mongoose = require("mongoose");
+
+const User = mongoose.model("users");
+```
+
+We `require` the `mongoose` module then we use the `model` function with the name of the `collection`(in this example `users`) to pull/fetch from `mongo` that specific `collection`. Previously we use the `model` function to load the `schema` to a `collection` sending 2 parameters so to pull/fetch something like this we use the same function with just one argument.
+
+- Then we need to create an instance of the `model class` to create a record.
+
+```js
+new User({
+  googleId: profile.id,
+}).save();
+```
+
+We use the `new` keyword on the `collection` that we just fetch sending an object with all properties that the `record` will have but this is not enough because we at this moment the `record` will exist just on the `js` world so we need to call the `save` function to actually store the `record` on `mongo`.
+
+At the end, we create the new `record` using the callback function that is a call at the en of the `passport` authentication process.
+
+```js
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const mongoose = require("mongoose");
+const keys = require("../config/keys");
+
+const User = mongoose.model("users");
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (accessToken, refreshToken, profile) => {
+      new User({
+        googleId: profile.id,
+      }).save();
+    }
+  )
+);
+```
+
+But if you are following this example at this moment maybe you have an `error` that said `schema hasn't been registered for model users`. This production by the order of operations that we set on our `index.js` file; this mean that we when we separate the `passport` logic put the `require` statement before the `model calls` so we just need to invert the order so the `sever` use first the `models class` file instead of the `passport` file. When you fix this you can use the authentication flow then check `mongo DB atlas` to see if we got the `collection` create and a new record.
+
+### Mongoose Queries
+
+At this moment every time we make a `request` using the endpoint of the authentication process we store the user's `id` but if you notice if you do the process with the same user more than once you gonna store the same `id` on different `records` so to not have this issue we gonna do a `query` into the database to search if there is a `record` with that id.
+
+To do a `query` we gonna use the same `User` constant that we create before and use a function call `findOne` that will check and return a user with that `id`.
+
+```js
+User.findOne({ googleId: profile.id });
+```
+
+Something to notices is that every time we reach to our `mongo` database in any way(like search, edit, save or delete a `record`) we are initiating an `asynchronous` action so the statement that we see before returning a `promise`(a tool that we use on `js` to handle `asynchronous` code) and we need to get a signal that the statement is ready for now we use a `then`(we gonna refactor it later).
+
+```js
+User.findOne({ googleId: profile.id }).then((existingUser) => {
+  if (existingUser) {
+  } else {
+    new User({
+      googleId: profile.id,
+    }).save();
+  }
+});
+```
+
+Now introducing the `save` logic we prevent having multiples `records` with the same `id`.
+
+### Passport callback
+
+Since we now have the ability to store or search if the user exists we need to tell `passport` and the `strategy` that we are `done` with the authentication process for this we use a function that we receive in the `callback` that runs when we get the user profile call `done`. When you call `done` you need to send 2 arguments; the first one is the `error` object that tell `passport` that something fails on the authentication process(Is everything is fine you can send `null` for this object) then the second argument is the `user` that we just found or created.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientIID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+    },
+    (accessToken, refreshToken, profile, done) => {
+      User.findOne({ googleId: profile.id }).then((existingUser) => {
+        if (existingUser) {
+          done(null, existingUser);
+        } else {
+          new User({
+            googleId: profile.id,
+          })
+            .save()
+            .then((user) => done(null, user));
+        }
+      });
+    }
+  )
+);
+```
+
+Since the `save` process is an asynchronous task we need to use `then` to get the `user` that we just created.
+
+### Encoding Users
+
+At this point we can trigger the authentication process; process the profile that we get and tell `passport` that you are done with the process but we still need some `unique` identifier for the user's browser that will be in every follow up request that the user do. For this we gonne set a cookie that the server will send to the client. To preform the task of create the cookie we need first to create that `unique` identifier and `passport` will help us with that; defining a `serializeUser` function and finally `passport` will add this `unique` identifier into the cookie for us.
+
+To define this `serializeUser` function we use de `passport` object that we `require` before an call a function using the same serialize name.
+
+```js
+passport.serializeUser((user, done) => {});
+```
+
+`passport.serializeUser` recive a function with 2 arguments
+
+- `user`: Is our `user model` and the same `model` that we retrive from the database and send it to the `done` function in the `callback` that `passport` do after we successfully have the user's profile
+- `done`: Is a callback function that we need to call every time we finish some task using `passport` that recive an `error` object(`null` if everything is fine) and a peice of information relate with the task that we preforme.
+
+Now we need to send this `unique` piece of information so `passport` can create the cookie for use.
+
+```js
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+```
+
+We just need to send as a second parameter the `unique` piace of information in the `done` function. There is something that may be confusing; we are not sending the `Google id` as a second parameter of the `done` function we are sending the `mongo id` of the `record`(`Mongo DB` autogenerate and `_id` for every `record` when is created) because if in the future we want to add different `strategies` to authenticate we can't ensure that all of then have an `Google id` but we allways have the `id` of the `record`.
+
+### Deserialize user
+
+Now we need to make a function that gives users the ability to convert the information of the cookie to a user. To do this we just use the `deserializeUser` function of `passport`.
+
+```js
+passport.deserializeUser((id, done) => {
+  User.findById(id).then((user) => {
+    done(null, user);
+  });
+});
+```
+
+Like the previous serialize function `deserializeUser` receive a function with 2 arguments:
+
+- `id`: Is the `id` that we send on the `serializeUser` function.
+- `done`: This is a callback function that we need to call every time we finish some task using `passport` that receives an `error` object(`null` if everything is fine) and a piece of information relate with the task that we perform.
+
+On that function we need to convert the `id` that we receive into a `model user` and that is what we send to the `done` function.
+
+### Enabling cookies
+
+Out of the box `express` doesn't now how to handle cookies so we gonna install a module call `cookie-session` to manage cookies on out application. To do this on the `server` directory on your terminal use the following command:
+`npm install --save cookie-session`
+
+Now `require` the `cookie-session` and `passport` modules on the `index.js` file.
+
+```js
+const cookieSession = require("cookie-session");
+const passport = require("passport");
+```
+
+Why `passport`? is beacuase we need to tell `passport` that keep track of the `session` of the user and need to do it using cookies.
+
+At this moment we begin to use those modules; first with `express`. We need to add the following `express` function passing the `cookieSession` object with a configuration.
+
+```js
+app.use(
+  cookieSession({
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    keys: [keys.cookieKey],
+  })
+);
+```
+
+- `maxAge`: Is the time the cookie exist on the browser before is automaclly expire. Recive a time in milliseconds.
+  For the example we use 30 days: `30 days * 24 hours in a day * 60 minutes on a hour * 60 seconds in a minute * 1000 milliseconds in one second`.
+- `keys`: Key use to encript the cookie and can be any ramdon set of characters. The `keys` property as you notice recive an `array` that can recive multiple set of characters and ramdon pick one to encript every cookie.
+
+Finally we need to tell `passport` to use cookies to handle authentication. We add the following code:
+
+```js
+app.use(passport.initialize());
+app.use(passport.session());
+```
+
+In the last title of this section we gonna have a more deep view of this process.
+
+### Testing authentication
+
+At this moment we complete a process to have cookies and that is added to the `request` object that we use on our `route handlers` so this means that you can build a `route handler` and should have the user information on the request.
+
+We separate our `routes` in a file called `authRoutes.js` and build an example `route handler` to test that handles the `/api/current_user` endpoint.
+
+```js
+const passport = require("passport");
+
+module.exports = (app) => {
+  app.get(
+    "/auth/google",
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+    })
+  );
+
+  app.get("/auth/google/callback", passport.authenticate("google"));
+
+  app.get("/api/current_user", (req, res) => {
+    res.send(req.user);
+  });
+};
+```
+
+Know go to the `/auth/google` endpoint on your browser and begin the process(We still don't handle what we see after authenticate) then go to the `/api/current_user` and you should see the `user` information.
+
+### Logout users
+
+To logout users `passport` attach a `logout` function to the `request` object that we recive on the `route handler`. For this example we use the `/api/logout` endpoint.
+
+```js
+app.get("/api/logout", (req, res) => {
+  req.logout();
+  res.send(req.user);
+});
+```
+
+Know each time you reach that endpoint `passport` will delete the information of the cookie and the user will consider to be `logout`.
+
+### A deeper dive
+
+As we mention before we gonna have a deeper look at some of the topics that we did and don't explain too much in some of the previews titles.
+
+#### Middleware
+
+On the `index.js` at this moment we have 3 `app.use` calls and give then 3 different objects to then. These calls are referred to as a `middleware` that are small functions that can be used to modify any incoming `request` that came to our app before that they get to our `route handlers`. An example on this application is when an authenticated user sends a `request` to our app; that `request` will pass by 3 `middleware`(The `cookie-session`, `passport.initialize` and `passport.session`) that will make some minor adjustments to the incoming `request`. Here is the process that we follow on the example:
+
+- First the `cookie.session` will extract the cookie data
+- The `passport` functions will pull the user `id` out of the cookie data
+- `desirializeUser` turn that user `id` into a user
+- The information that we need is added to the `req` object as `req.user`
+
+### cookieSession
+
+Like we mentioned before the `cookieSession` extract the data of a cookie and added to the `req` object wit a property call `session` like this `req.session`. Internally `passport` doesn't check the actual cookie it checks the `req.session` that was added then pull the data out of there. So if you send the `req.session` on the `/api/current_user` you will see an object like this:
+
+```
+passport: {
+  user: "the_user_id"
+}
+```
+
+And the `id` is what was we store on the cookie and the one that we are gonna use to retrieve the user data with the `desirializeUser` function.
+
+### cookie-session vs express-session
+
+If you check the `express` documentation you will see that they recommend different libraries to manage cookies or sessions that are `cookie-session`(the library that we are using) and `express-session`.
+
+As we mention before `cookie-session` we can assign an amount of data in a cookie then take the cookie data an assign it to the `req.session` property. So the cookie is the `session` and has all the data related to the current `session`.
+
+The `express-session` library handle the `session` differently; it stores a reference to a `session` inside the cookie and then takes that `session id` from the cookie and look up all the relevant information from `session store`(some database of service that store the relevant data of a `session`). For example:
+
+```js
+        cookie             MongoDB
+|| session_id = 123|| ==> || 123 || ==> || { userid: 123, username: 'test' }  ||
+                          || 456 || ==> || { userid: 555, username: 'test1' } ||
+                          || 788 || ==> || { userid: 10, username: 'test3' }  ||
+```
+
+So the key difference between the 2 is how the key information that we want on the cookie is store. Also, another difference is that we can store as much data that we want on the `session store` because it is a database that we can set to store as much data as we want too but the `cookie-session` we are limited to 4 kb.
+
+### Notes:
+
+- You don't need to pass all the `request` to a `middleware` you can configure that some of them don't use it.
+- The example object of the `cookieSession` is in terms of our application so you can get a different result on the object inside of the `passport` property.
