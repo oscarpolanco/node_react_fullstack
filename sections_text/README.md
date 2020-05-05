@@ -848,3 +848,18 @@ To set the `enviroment variables` that we use on the `prod.js` file just need to
 - Click `add`
 
 Know you can deploy the changes that we have since the last time we deploy our app using the same [steps](https://github.com/oscarpolanco/node_react_fullstack/tree/master/sections_text#verifying-heroku-deployment) that we mention before.
+
+### Fixing proxy issue
+
+At this moment you should realize that we got a `mismatch URL` error when we try to do the authentication process on our app in the `Heroku` server. If you look the error closely you will notice that is redirected to the correct URL but use `HTTP` regardless you set `https` on the configuration that you previously did for your production `google api` so in some part of the process something affects the URL and change it. This error happened for the combination of 2 factors that combine cause the issue:
+
+- The first factor is the `GoogleStrategy` that we use. Inside of the `GoogleStrategy` configuration object that we send there is a `callbackUrl` property that has a relative path; so the fact that is a relative path is one of the issues. When we send a relative path to give us more flexibility when we are on the development phase or deploying to production because we actually don't worry about the different domains between environments. The `GoogleStrategy` actually is set to handle this type of cases but the second factor is the reason why the `GoogleStrategy` is changing the URL.
+
+- The second factor is `Heroku proxy`. When we deploy an app to `Heroku` is running into `Heroku's` network and our app is store in some `server` that `Heroku` set to us in some far place so to make sure that the traffic goes to the correct `server` all the traffic need to pass a `Heroku proxy` in it internal network. So the `GoogleStrategy` detects that any request came from a proxy it will don't trust any request that came from a proxy so it will not use `https`.
+
+Understanding this we got 2 possible solutions:
+
+- Set a `proxy` property to be `true` on the `GoogleStrategy` configuration object
+- Put the complete URL on the `callbackURL` propety on the `GoogleStrategy` configuration object
+
+In our case since we trust the proxy, we gonna up to the first solution. Once you update the code with your solution; commit your changes and deploy the app to `Heroku`.

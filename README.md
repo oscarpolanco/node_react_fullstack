@@ -13,8 +13,8 @@
 - Install [nodejs](https://nodejs.org/en/)
 - On your console go to the `server` directory
 - Install all the dependencies using: `npm install`
-- On the `config` directory add a file called `keys.js`
-- On the `keys.js` file `export` and object with the following properties
+- On the `config` directory add a file called `dev.js`
+- On the `dev.js` file `export` and object with the following properties
   ```
   googleClientID: `id` of your google application,
   googleClientSecret: Secret `id` of you google application,
