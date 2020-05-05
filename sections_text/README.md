@@ -739,3 +739,127 @@ So the key difference between the 2 is how the key information that we want on t
 
 - You don't need to pass all the `request` to a `middleware` you can configure that some of them don't use it.
 - The example object of the `cookieSession` is in terms of our application so you can get a different result on the object inside of the `passport` property.
+
+## Section 5: Dev vs Prod eviroments
+
+In this section, we are gonna `deploy` our code to `Heroku` once again but we need to do certain things to accomplish this. First, we need to understand that we gonna have 2 sets of databases and `google API`; one for each environment that we have(`dev` and `production`) so we can work freely when we are on the development phase and don't mess with the `production` data.
+
+### Setup and configuration of MongoDB atlas for production
+
+- Sing in on your `Mongo DB atlas` account
+- On your `dashboard` at the left find your current project dropdown and click it(if you don't set any name should said `project 0`)
+- Click the `new project` option
+- Put the name of the new project(in this example we use `emaily-prod`)
+- Click `next`
+- Then click `create project`
+- On the `cluster` section click at the `build cluster` button
+- Choose your service provider and a location near you(In the case of this example we choose `aws` and `virginia`)
+- Click on `create cluster`
+- After finish creating the `cluster` click on the `connect` button
+- Then click on the `Add a different IP Address` button
+- On the `ip address` input type this: `0.0.0.0/0`
+  In a real production app, you would typically have a static IP and a Fully Qualified Domain Name. In this case, we would whitelist only the static IP. You can read up on this more here:
+  https://help.heroku.com/JS13Y78I/i-need-to-whitelist-heroku-d
+- Click on the `Add IP Address` button
+- Then add your `Mongo DB` user(as a recommendation use the `autogenerate secure password` button)
+- Click on the `Create MongoDB User`
+- Then click the `Choose a connection method` button
+- Click on `Connect your Application`
+- Copy the connection string
+
+### Setup and configuration of google API for production
+
+- Sing in on your account in https://console.cloud.google.com
+- On your dashboard at the top in the left click on your current project dropdown
+- Click on `create project`
+- Add the name of the project and click `create`(for the example we use `emaily-prod`)
+- Wait until the creation process finish
+- Then go to the top left corner and click on the `hamburger` menu
+- Click the option `API & Services`
+- On the submenu click on the `OAuth consent screen`
+- In the left side menu choose `OAuth consent screen`
+- Check the `External` option
+- Click on `CREATE`
+- Fill the `Application name`(put the same that you use before and you can pass sometimes fill the others inputs since is for production)
+- Scroll to the button and click `Save`
+- On the left side, menu click on the `Credentials` option
+- Click on `CREATE CREDENTIALS` at the top of the `credentials` page
+- Select `OAuth client ID`
+- On the `Application type`, options check the `Web application`
+- Go to your terminal on the root of your project
+- Use the `heroku open` command
+- Copy the app URL that `Heroku` create
+- Scroll to the `Authorized JavaScript Origins` an put your authorize URL, in this case, your `Heroku` url without a `/` in the end.
+- Scroll to `Authorized redirect URI` and put the `Heroku` URL with the `callback` endpoint that we define before
+  `http://herouku.your.url/auth/google/callback`
+- Click on the `Create` button
+- Copy your `client id` and `client secret`
+
+### Changing the keys.js file
+
+Know we need 2 sets of credentials for our application one for `development` and one for `production` so we need to make some changes to our `keys.js`(To this moment we didn't commit this file).
+
+First, we need to take on the consideration that `Heroku` use a `environment variable` that can help us to now on witch environment we are; that is called `NODE_ENV` and should be equal to `production` on the `Heroku` servers.
+
+Know we are creating 2 new files on the `config` directory one is call `dev.js` and the other one is called `prod.js`. On `dev` we will add the current content of the `key.js` that is an object with all the credentials of our app.
+
+```js
+module.exports = {
+  googleClientID: `your_cliend_id`,
+  googleClientSecret: `your_client_secret`,
+  mongoURI: "your_mongo_conection_string",
+  cookieKey: "your_random_string",
+};
+```
+
+And on the `prod.js` we will add the same object but instead of adding the cofiguration we will use `heroku's enviroment variables` that we are gonna create after set these credentials files.
+
+```js
+module.exports = {
+  googleClientID: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  mongoURI: process.env.MONGO_URI,
+  cookieKey: process.env.COOKIE_KEY,
+};
+```
+
+Know we gonna update the `key.js` file to choose one of the previews to define files depending on the environment
+
+```js
+if (process.env.NODE_ENV === "production") {
+  module.exports = require("./prod");
+} else {
+  module.exports = require("./dev");
+}
+```
+
+Now we need to commit the `key.js` file and the `prod.js` file that will be needed when we deploy our app to `Heroku`. The `dev.js` file will be `ignore`.
+
+### Set enviroment variables on Heroku
+
+To set the `enviroment variables` that we use on the `prod.js` file just need to follow the next steps:
+
+- Sing in to your `Heroku` account
+- Choose the app that you create for this example
+- Choose the `setting` option at the top
+- Search for the `Config Vars` section
+- Click on the `Reveal Config Vars` button
+- Add the names that you add on the `prod.js` and the values that they gonna have. For example `process.env.GOOGLE_CLIENT_ID` => `GOOGLE_CLIENT_ID`
+- Click `add`
+
+Know you can deploy the changes that we have since the last time we deploy our app using the same [steps](https://github.com/oscarpolanco/node_react_fullstack/tree/master/sections_text#verifying-heroku-deployment) that we mention before.
+
+### Fixing proxy issue
+
+At this moment you should realize that we got a `mismatch URL` error when we try to do the authentication process on our app in the `Heroku` server. If you look the error closely you will notice that is redirected to the correct URL but use `HTTP` regardless you set `https` on the configuration that you previously did for your production `google api` so in some part of the process something affects the URL and change it. This error happened for the combination of 2 factors that combine cause the issue:
+
+- The first factor is the `GoogleStrategy` that we use. Inside of the `GoogleStrategy` configuration object that we send there is a `callbackUrl` property that has a relative path; so the fact that is a relative path is one of the issues. When we send a relative path to give us more flexibility when we are on the development phase or deploying to production because we actually don't worry about the different domains between environments. The `GoogleStrategy` actually is set to handle this type of cases but the second factor is the reason why the `GoogleStrategy` is changing the URL.
+
+- The second factor is `Heroku proxy`. When we deploy an app to `Heroku` is running into `Heroku's` network and our app is store in some `server` that `Heroku` set to us in some far place so to make sure that the traffic goes to the correct `server` all the traffic need to pass a `Heroku proxy` in it internal network. So the `GoogleStrategy` detects that any request came from a proxy it will don't trust any request that came from a proxy so it will not use `https`.
+
+Understanding this we got 2 possible solutions:
+
+- Set a `proxy` property to be `true` on the `GoogleStrategy` configuration object
+- Put the complete URL on the `callbackURL` propety on the `GoogleStrategy` configuration object
+
+In our case since we trust the proxy, we gonna up to the first solution. Once you update the code with your solution; commit your changes and deploy the app to `Heroku`.
