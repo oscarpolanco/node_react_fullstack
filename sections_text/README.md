@@ -863,3 +863,14 @@ Understanding this we got 2 possible solutions:
 - Put the complete URL on the `callbackURL` propety on the `GoogleStrategy` configuration object
 
 In our case since we trust the proxy, we gonna up to the first solution. Once you update the code with your solution; commit your changes and deploy the app to `Heroku`.
+
+## Section 6: Moving to the Client side
+
+For the `client` side of our application we are gonna use `create-react-app` that will help us to generate a project with a lot of pre-build configuration and tools that will help us. To install it and generate a project you just need to follow this steps:
+
+- On your terminal globally install `create-react-app`: `npm install -g create-react-app`
+- Then go to the `server` directory and generate a project with the name `client`: `npx create-react-app client`
+
+Now inside of the `server` directory you will notice that you got a lot of files that are a functional `react` application with a built in `server`. To start your `react` app `server` you just need to go to the `client` directory and type the `start` command: `npm start`.
+
+Now is a little confusing that we got 2 `servers` for our application but they are ment to have different task. One of the `servers` is the one that we been building that handle the authentication logic(On the future we gonna add more) and the other one y from our `client` side that will take all the `components` that we build create a bundle and send it to the browser using `babel` and `webpack` so we will hace a `server` that send all our frontend of our application and the other one that serve data.
