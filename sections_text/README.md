@@ -866,11 +866,23 @@ In our case since we trust the proxy, we gonna up to the first solution. Once yo
 
 ## Section 6: Moving to the Client side
 
-For the `client` side of our application we are gonna use `create-react-app` that will help us to generate a project with a lot of pre-build configuration and tools that will help us. To install it and generate a project you just need to follow this steps:
+For the `client` side of our application, we are gonna use `create-react-app` that will help us to generate a project with a lot of pre-build configuration and tools that will help us. To install it and generate a project you just need to follow these steps:
 
 - On your terminal globally install `create-react-app`: `npm install -g create-react-app`
 - Then go to the `server` directory and generate a project with the name `client`: `npx create-react-app client`
 
-Now inside of the `server` directory you will notice that you got a lot of files that are a functional `react` application with a built in `server`. To start your `react` app `server` you just need to go to the `client` directory and type the `start` command: `npm start`.
+Now inside of the `server` directory, you will notice that you got a lot of files that are a functional `react` application with a built-in `server`. To start your `react` app `server` you just need to go to the `client` directory and type the `start` command: `npm start`.
 
-Now is a little confusing that we got 2 `servers` for our application but they are ment to have different task. One of the `servers` is the one that we been building that handle the authentication logic(On the future we gonna add more) and the other one y from our `client` side that will take all the `components` that we build create a bundle and send it to the browser using `babel` and `webpack` so we will hace a `server` that send all our frontend of our application and the other one that serve data.
+Now is a little confusing that we got 2 `servers` for our application but they are meant to have a different task? One of the `servers` is the one that we been building that handles the authentication logic(On the future we gonna add more) and the other one y from our `client` side that will take all the `components` that we build create a bundle and send it to the browser using `babel` and `webpack` so we will have a `server` that send all our frontend of our application and the other one that serves data.
+
+### Running the Client and Server
+
+To do this we are gonna use a module called `concurrently` that will allow us to run the 2 commands that start both servers in parallel.
+
+- On the `server` directory install the `conurrently` module using: `npm install --save concurrently`
+- Go to the `packege.json` on the `server` directory
+- On the `script` section add a `client` script: `"client": "npm run start --prefix client"`
+  With the `prefix` you can specify where is the command you gonna run in this case the client `package.json`
+- Change the `dev` script name for `server`: `"server": "nodemon index.js",`
+- Now add a new `dev` script to run both servers and user `concurrently`: `"dev": "concurrently \"npm run server\" \"npm run client\""`
+- Now run both server on your terminal
