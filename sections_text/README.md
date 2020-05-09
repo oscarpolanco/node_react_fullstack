@@ -886,3 +886,66 @@ To do this we are gonna use a module called `concurrently` that will allow us to
 - Change the `dev` script name for `server`: `"server": "nodemon index.js",`
 - Now add a new `dev` script to run both servers and user `concurrently`: `"dev": "concurrently \"npm run server\" \"npm run client\""`
 - Now run both server on your terminal
+
+### Routing Stumbling block
+
+Now that we have the `client` part we can begin work with the other piece of the authentication that we still missing which is the trigger of the process by the user. For this process, for now, we will add a link that has that target the URL that we set before on our `express` server to trigger the authentication process(`/auth/google`).
+
+- Go to the `client/src` directory
+- Open the `App.js` file
+- Inside of the `header` tag add a link like this:
+  `<a href="/auth/google">Sing In with Google</a>`
+
+Now that we have the link you will notice that we use a relative path so by default the browser will add your current URL that you are at that moment in this case `http://localhost:3000/` but our `express` server runs at the port `5000` so this means that we can't trigger the authentication process. We can write the correct URL in the `href` of the `anchor` tag but we will deploy our app to `Heroku` later so the link will not work anymore so we need a way to use the relative path and continue working no matter witch environment you are in; for this purpose we gonna use a `proxy` in our `client` side.
+
+To add a `proxy` on your `client` app just need to follow the next steps:
+
+- On your terminal go to the `client` directory
+- Install the `http-proxy-middleware` library using
+  `npm install http-proxy-middleware`
+- Now on your editor go to the `client/src` directory and create a file call `setupProxy.js`
+- On the `setupProxy.js` file add the following block:
+
+  ```js
+  const { createProxyMiddleware } = require("http-proxy-middleware");
+  module.exports = function (app) {
+    app.use(
+      ["/api", "/auth/google"],
+      createProxyMiddleware({
+        target: "http://localhost:5000",
+      })
+    );
+  };
+  ```
+
+- Now run the servers again
+- Click on the link
+- Now you will redirect to the google page but we got a `mismatch` error(this is the proof that our `proxy` works)
+
+### Fixing the mismatch error
+
+- First, go to the page that shows the `mismatch` error
+- Then copy the `console.developers` link that the error show
+- On your dashboard make sure that you are on your `google API` for development
+- Then on your `credentials` section
+- Go to the `Authorized redirect URI` input
+- Add the `http://localhost:3000/auth/google/callback`
+- Click save
+- Test the URL after the `google API` process for update the changes finish
+
+### Flow of the server in the development mode
+
+When we are running both `servers` of our application we spec the following:
+
+- When we go to our browser and make a request to `http://localhost:3000/` we gonna target our `create-react-app` server.
+- The `create-react-app` server will return a `bundle.js` file that contains all our development assets.
+- Then anytime that our app needs data from our `express API` that request will go to the `create-react-app` server and with the help of the `proxy` that we configure; the request will we forward to our `Node/express API`.
+
+### Flow of the server on production mode
+
+On `production` is a little different because the `create-react-app` server doesn't exist because before we deploy our application we gonna `build` our `React` project. When you run `npm build` on the root of the `client` directory; `create-react-app` will take all the different `js` and `style` files in the `src` and `public` directories and run `webpack` and `babel` over those files a will create a final `build` of our project in a directory called `build`.
+
+- Now on `Heroku`, we will only run the `Node/Express` server
+- When someone comes to our application we automatically return the `HTML` and `js` that we create with the `build` process that we did on our `React` application.
+
+So at that moment, we don't get the `proxy` that we configure for our `client` side to redirect the request to the `Node/Express` side because the `create-react-app` server doesn't exist but if you notice we are running the `Node/Express` server in the same domain that is our `client` side and since we use a relative path on the `anchor` that we use this will automatically send the request to the correct `handler`.
