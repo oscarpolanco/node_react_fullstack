@@ -863,3 +863,121 @@ Understanding this we got 2 possible solutions:
 - Put the complete URL on the `callbackURL` propety on the `GoogleStrategy` configuration object
 
 In our case since we trust the proxy, we gonna up to the first solution. Once you update the code with your solution; commit your changes and deploy the app to `Heroku`.
+
+## Section 6: Moving to the Client side
+
+For the `client` side of our application, we are gonna use `create-react-app` that will help us to generate a project with a lot of pre-build configuration and tools that will help us. To install it and generate a project you just need to follow these steps:
+
+- On your terminal globally install `create-react-app`: `npm install -g create-react-app`
+- Then go to the `server` directory and generate a project with the name `client`: `npx create-react-app client`
+
+Now inside of the `server` directory, you will notice that you got a lot of files that are a functional `react` application with a built-in `server`. To start your `react` app `server` you just need to go to the `client` directory and type the `start` command: `npm start`.
+
+Now is a little confusing that we got 2 `servers` for our application but they are meant to have a different task? One of the `servers` is the one that we been building that handles the authentication logic(On the future we gonna add more) and the other one y from our `client` side that will take all the `components` that we build create a bundle and send it to the browser using `babel` and `webpack` so we will have a `server` that send all our frontend of our application and the other one that serves data.
+
+### Running the Client and Server
+
+To do this we are gonna use a module called `concurrently` that will allow us to run the 2 commands that start both servers in parallel.
+
+- On the `server` directory install the `conurrently` module using: `npm install --save concurrently`
+- Go to the `packege.json` on the `server` directory
+- On the `script` section add a `client` script: `"client": "npm run start --prefix client"`
+  With the `prefix` you can specify where is the command you gonna run in this case the client `package.json`
+- Change the `dev` script name for `server`: `"server": "nodemon index.js",`
+- Now add a new `dev` script to run both servers and user `concurrently`: `"dev": "concurrently \"npm run server\" \"npm run client\""`
+- Now run both server on your terminal
+
+### Routing Stumbling block
+
+Now that we have the `client` part we can begin work with the other piece of the authentication that we still missing which is the trigger of the process by the user. For this process, for now, we will add a link that has that target the URL that we set before on our `express` server to trigger the authentication process(`/auth/google`).
+
+- Go to the `client/src` directory
+- Open the `App.js` file
+- Inside of the `header` tag add a link like this:
+  `<a href="/auth/google">Sing In with Google</a>`
+
+Now that we have the link you will notice that we use a relative path so by default the browser will add your current URL that you are at that moment in this case `http://localhost:3000/` but our `express` server runs at the port `5000` so this means that we can't trigger the authentication process. We can write the correct URL in the `href` of the `anchor` tag but we will deploy our app to `Heroku` later so the link will not work anymore so we need a way to use the relative path and continue working no matter witch environment you are in; for this purpose we gonna use a `proxy` in our `client` side.
+
+To add a `proxy` on your `client` app just need to follow the next steps:
+
+- On your terminal go to the `client` directory
+- Install the `http-proxy-middleware` library using
+  `npm install http-proxy-middleware`
+- Now on your editor go to the `client/src` directory and create a file call `setupProxy.js`
+- On the `setupProxy.js` file add the following block:
+
+  ```js
+  const { createProxyMiddleware } = require("http-proxy-middleware");
+  module.exports = function (app) {
+    app.use(
+      ["/api", "/auth/google"],
+      createProxyMiddleware({
+        target: "http://localhost:5000",
+      })
+    );
+  };
+  ```
+
+- Now run the servers again
+- Click on the link
+- Now you will redirect to the google page but we got a `mismatch` error(this is the proof that our `proxy` works)
+
+### Fixing the mismatch error
+
+- First, go to the page that shows the `mismatch` error
+- Then copy the `console.developers` link that the error show
+- On your dashboard make sure that you are on your `google API` for development
+- Then on your `credentials` section
+- Go to the `Authorized redirect URI` input
+- Add the `http://localhost:3000/auth/google/callback`
+- Click save
+- Test the URL after the `google API` process for update the changes finish
+
+### Flow of the server in the development mode
+
+When we are running both `servers` of our application we spec the following:
+
+- When we go to our browser and make a request to `http://localhost:3000/` we gonna target our `create-react-app` server.
+- The `create-react-app` server will return a `bundle.js` file that contains all our development assets.
+- Then anytime that our app needs data from our `express API` that request will go to the `create-react-app` server and with the help of the `proxy` that we configure; the request will we forward to our `Node/express API`.
+
+### Flow of the server on production mode
+
+On `production` is a little different because the `create-react-app` server doesn't exist because before we deploy our application we gonna `build` our `React` project. When you run `npm build` on the root of the `client` directory; `create-react-app` will take all the different `js` and `style` files in the `src` and `public` directories and run `webpack` and `babel` over those files a will create a final `build` of our project in a directory called `build`.
+
+- Now on `Heroku`, we will only run the `Node/Express` server
+- When someone comes to our application we automatically return the `HTML` and `js` that we create with the `build` process that we did on our `React` application.
+
+So at that moment, we don't get the `proxy` that we configure for our `client` side to redirect the request to the `Node/Express` side because the `create-react-app` server doesn't exist but if you notice we are running the `Node/Express` server in the same domain that is our `client` side and since we use a relative path on the `anchor` that we use this will automatically send the request to the correct `handler`.
+
+### Why this architecture
+
+On other projects you will find a different architecture like having to servers; one for our frontend and the other for our backend; that's completely acceptable but for this example, we wanna keep the things easy and we skip configuration that we should do with that other architecture. Also, we avoid 2 issues:
+
+- We mentioned before that on our authentication flow we are gonna set some user's information on a cookie and that will be our session but there is an issue; when a user makes a `request` to `http://localhost:3000/` the cookie will automatically add to the `request` but is you need some kind of data from our `node/express` API and do a `request` to `http://localhost:5000/` by default the browser will not add the cookie information on the `request` for security reason. Imagine that you are in `http://localhost:3000/` and make a `request` to `http://localhost:5000/`; the browser is gonna be suspicious on why you from a domain is trying to access to a completely different domain and will think that maybe some malicious script redirect you to that domain so eliminate all the sensitive information of the cookie. This behavior is by default so there are ways to handle this for example on `development` we use a `proxy` on the `create-react-app` server.
+
+- Another security feature of the browser when you try to access to a different domain from other it will be considered a `CORS` request(`Cross Origin Resources Sharing`); this means that by default the browser assumes that you are intending something malicious if you try to access a different domain from your current one. This is another feature that we can do a way around.
+
+### Authentication process using the proxy
+
+- Let's assume that the user is in `http://localhost:3000/`
+- The user clicks on the authentication link in the client(`/auth/google`)
+- The browser sees that is a relative path and prepend `http://localhost:3000/` so now we will have `http://localhost:3000/auth/google`
+- The `request` go to the `create-react-app` server and the `proxy` that is inside of it
+- Immediately the `proxy` check his configuration and see if it got any settings on that route and in our case the answer is yes
+- Since the `proxy` is responsible for that incoming `request` it will tell the browser that sits the `request` to figure out what will do
+- The `proxy` copy the entire incoming `request`
+- Then send that copy to the route that we specify on the configuration in this case `http://localhost:5000/auth/google`
+- Now the request is handled by our `node/express` server
+- The server sees that the user is trying to authenticate so to continue you will need to go to the `google` servers and here is your callback URL(`/auth/google/callback`) so create that `response` send it to the `proxy`
+- The `proxy` send the response to the pending `request` that send it back to the browser
+- The browser gets redirected to the `google` servers
+- The user gives authorization on the google screen
+- Them the user is redirected to the callback URL that is `/auth/google/callback` since we specify a relative path the URL will be `http://localhost:3000/auth/google/callback?code=the_code`
+- That callback `request` is sent back to the `create-react-app` server and the `proxy`
+- The `proxy` will check his configuration to see if he can handle that `request` and on our case, it can; no matter that has `callback?code=the_code`
+- Copy the incoming `request`
+- Send it to the `node/express` server
+- The server takes the code and turns into a profile information
+- Create a cookie and send that response to the `proxy`
+- The `proxy` send take the pending `request` and response to the browser
