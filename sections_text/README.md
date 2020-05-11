@@ -949,3 +949,35 @@ On `production` is a little different because the `create-react-app` server does
 - When someone comes to our application we automatically return the `HTML` and `js` that we create with the `build` process that we did on our `React` application.
 
 So at that moment, we don't get the `proxy` that we configure for our `client` side to redirect the request to the `Node/Express` side because the `create-react-app` server doesn't exist but if you notice we are running the `Node/Express` server in the same domain that is our `client` side and since we use a relative path on the `anchor` that we use this will automatically send the request to the correct `handler`.
+
+### Why this architecture
+
+On other projects you will find a different architecture like having to servers; one for our frontend and the other for our backend; that's completely acceptable but for this example, we wanna keep the things easy and we skip configuration that we should do with that other architecture. Also, we avoid 2 issues:
+
+- We mentioned before that on our authentication flow we are gonna set some user's information on a cookie and that will be our session but there is an issue; when a user makes a `request` to `http://localhost:3000/` the cookie will automatically add to the `request` but is you need some kind of data from our `node/express` API and do a `request` to `http://localhost:5000/` by default the browser will not add the cookie information on the `request` for security reason. Imagine that you are in `http://localhost:3000/` and make a `request` to `http://localhost:5000/`; the browser is gonna be suspicious on why you from a domain is trying to access to a completely different domain and will think that maybe some malicious script redirect you to that domain so eliminate all the sensitive information of the cookie. This behavior is by default so there are ways to handle this for example on `development` we use a `proxy` on the `create-react-app` server.
+
+- Another security feature of the browser when you try to access to a different domain from other it will be considered a `CORS` request(`Cross Origin Resources Sharing`); this means that by default the browser assumes that you are intending something malicious if you try to access a different domain from your current one. This is another feature that we can do a way around.
+
+### Authentication process using the proxy
+
+- Let's assume that the user is in `http://localhost:3000/`
+- The user clicks on the authentication link in the client(`/auth/google`)
+- The browser sees that is a relative path and prepend `http://localhost:3000/` so now we will have `http://localhost:3000/auth/google`
+- The `request` go to the `create-react-app` server and the `proxy` that is inside of it
+- Immediately the `proxy` check his configuration and see if it got any settings on that route and in our case the answer is yes
+- Since the `proxy` is responsible for that incoming `request` it will tell the browser that sits the `request` to figure out what will do
+- The `proxy` copy the entire incoming `request`
+- Then send that copy to the route that we specify on the configuration in this case `http://localhost:5000/auth/google`
+- Now the request is handled by our `node/express` server
+- The server sees that the user is trying to authenticate so to continue you will need to go to the `google` servers and here is your callback URL(`/auth/google/callback`) so create that `response` send it to the `proxy`
+- The `proxy` send the response to the pending `request` that send it back to the browser
+- The browser gets redirected to the `google` servers
+- The user gives authorization on the google screen
+- Them the user is redirected to the callback URL that is `/auth/google/callback` since we specify a relative path the URL will be `http://localhost:3000/auth/google/callback?code=the_code`
+- That callback `request` is sent back to the `create-react-app` server and the `proxy`
+- The `proxy` will check his configuration to see if he can handle that `request` and on our case, it can; no matter that has `callback?code=the_code`
+- Copy the incoming `request`
+- Send it to the `node/express` server
+- The server takes the code and turns into a profile information
+- Create a cookie and send that response to the `proxy`
+- The `proxy` send take the pending `request` and response to the browser
