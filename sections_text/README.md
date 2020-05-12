@@ -981,3 +981,32 @@ On other projects you will find a different architecture like having to servers;
 - The server takes the code and turns into a profile information
 - Create a cookie and send that response to the `proxy`
 - The `proxy` send take the pending `request` and response to the browser
+
+## Section 7: Developing the client side
+
+### Refactoring with async/await
+
+As we mention before we gonna refactor some of the `promises` that we use before to use the `async/await` keyword. Here is the first one on the `passport.js` file.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+      proxy: true,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = await User.findOne({ googleId: profile.id });
+      if (existingUser) {
+        return done(null, existingUser);
+      }
+      const user = await new User({
+        googleId: profile.id,
+      }).save();
+      done(null, user);
+    }
+  )
+);
+```
