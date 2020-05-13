@@ -1058,3 +1058,34 @@ Now we gonna begin to work on the client-side of our application. Here are the f
 - Escensaly we gonna have a root file and another one that is very close to be a root file:
   - `index.js`: This file is going to have the initial bootup logic of the `Redux` side of our application another way to see it is that it is gonna put together all the initial data layer considerations of our application.
   - `App.js`: Is going to be aware of the rendering of our application or the `React` layer of our application.
+
+### Redux initial setup
+
+At this point, we add `React`,`Redux`, and `React-Redux` to our client and we make the basic`React` set up so now we gonna continue with `Redux`.
+
+First, a little bit of `Redux`; is a tool that is gonna help us to store the `state` of our application. On our app, we will have a `React` component that will call an`action creator` that returns an `action` then this`action` is sent to our `reducers` that will update the`state` on our `redux` store that will send back to the `React` component all that update`state`.
+
+But how is this `Redux` logic will connect with our`React` side of our application? We will have a `Provider` tag that is a`React` component that is provided by the `react-redux` (This library purpose is that`React` and `Redux` work together nicely) library on our`index.js` that is gonna wrap the components that we need that the `state` is available.
+
+Here are the steps for the basic septup of `Redux`:
+
+- Import `Provider` from`react-redux`
+    `import {Provider} from" react-redux ";`
+- Import `createStore` and`applyMiddleware` from `redux`
+    `import {createStore, applyMiddleware} from" redux ";`
+- Use the `createStore` to create an intance of the`redux` store
+
+`const store = createStore ()`
+
+- The first argument of the `createStore` is all different reducer of our application (Since we don't have anything yet we will add a function)
+      `const store = createStore (() => [],);`
+
+- The second argument is a inital state of our appliication (Since we are not using server side rendering we don't care to much about this argument so we gonna send an empty object)
+    `const store = createStore (() => [], {});`
+- Finally we apply the `applyMiddleware`
+    `const store = createStore (() => [], {}, applyMiddleware ());`
+- Now on the `<App />` call and wrap it using the `Provider` tag
+    `js ReactDOM.render ( <Provider}> <App /> </Provider>, document.querySelector ("# root") );`
+- Send the `store` as a`prop` of `Provider`
+    `js ReactDOM.render ( <Provider store = {store}> <App /> </Provider>, document.querySelector ("# root") );`
+- Run the servers and test on the browser
