@@ -1089,3 +1089,36 @@ Here are the steps for the basic septup of `Redux`:
 - Send the `store` as a`prop` of `Provider`
     `js ReactDOM.render ( <Provider store = {store}> <App /> </Provider>, document.querySelector ("# root") );`
 - Run the servers and test on the browser
+
+### Creating the auth reducer
+
+Now we gonna add our first `reducer` of our app at this time the `authReducer` that is gonna be responsible of records whether or not the user is logged in.
+
+- First on the `client/src` directory create a folder call `reducers`
+- Then inside of the `reducers` folder create a `index.js` file
+- Then create a file call `authReducer.js`
+- On the `authReducer.js` export this function:
+
+  ```js
+  export default function (state = {}, action) {
+    switch (action.type) {
+      default:
+        return state;
+    }
+  }
+  ```
+
+  In this case, we gonna receive the state that initially will be `undefined` that is why we add an empty object as default param and action and put the default case that will be the same state that you received.
+
+- Go to the `index.js` file in the `reducers` directory
+- Import `combineReducers` from `redux`
+  `import { combineReducers } from "redux";`
+- Import the `authReducer` file
+  `import authReducer from "./authReducer";`
+- Export the `combineReducer` with an object that has a property equals to the `authReducer`
+  ```js
+  export default combineReducers({
+    auth: authReducer,
+  });
+  ```
+  An important aspect of the object that we send to the `combineReducers` is that the `keys` that we provide will be representing the `keys` that are on our `state` object so be careful naming this here.
