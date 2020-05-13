@@ -1010,3 +1010,51 @@ passport.use(
   )
 );
 ```
+
+### Client React Setup
+
+Now we gonna begin to work on the client-side of our application. Here are the first steps that we gonna follow:
+
+- Go to the `client/src` directory
+- Delete all files except `serviceWorker.js` and `setupProxy.js`
+- On your terminal go to the `client` directory
+- Now install the `redux`, `react-redux` and `react-router-dom` using:
+  `npm install --save redux react-redux react-router-dom`
+- On your editor go to the `client/src` directory
+- Create a file called `index.js`
+- Import `react` and `react-dom`
+
+  ```js
+  import React from "react";
+  import ReactDOM from "react-dom";
+  ```
+
+- Go to the `client/src` directory
+- Create a new folder call `components`
+- On the `components` folder create a file call `App.js`
+- On the `App.js` file import `react`
+  `import React from "react";`
+- Now create an `App` function that returns some content like this
+
+  ```js
+  const App = () => {
+    return <div>Hi there!</div>;
+  };
+  ```
+
+- Export that function
+  `export default App;`
+- Go to the `index.js` that you create before
+- Import the `App` component
+  `import App from "./components/App";`
+- Now use `react-dom` to render the root component
+  `ReactDOM.render(<App />, document.querySelector("#root"));`
+- On your terminal go to the `server` directory
+- Run both servers using `npm run dev`
+- You should see the content of `App.js` on the browser
+
+#### Notes:
+
+- Escensaly we gonna have a root file and another one that is very close to be a root file:
+  - `index.js`: This file is going to have the initial bootup logic of the `Redux` side of our application another way to see it is that it is gonna put together all the initial data layer considerations of our application.
+  - `App.js`: Is going to be aware of the rendering of our application or the `React` layer of our application.
