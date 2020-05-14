@@ -1116,9 +1116,51 @@ Now we gonna add our first `reducer` of our app at this time the `authReducer` t
 - Import the `authReducer` file
   `import authReducer from "./authReducer";`
 - Export the `combineReducer` with an object that has a property equals to the `authReducer`
+
   ```js
   export default combineReducers({
     auth: authReducer,
   });
   ```
+
   An important aspect of the object that we send to the `combineReducers` is that the `keys` that we provide will be representing the `keys` that are on our `state` object so be careful naming this here.
+
+### React router basic setup
+
+We will have different pages and content that will be visible for the user this means that we will have different `routes` that will control what we see for this we will use `react-router`. Here are the steps for a basic setup
+
+- On the `App.js` file; import `BrowserRouter` and `Route` from `react-router-dom`
+  `import { BrowserRouter, Route } from "react-router-dom";`
+  - `BrowserRouter`: Is the thing that tells `react-route` how to behave. It looks to the current URL then changes the set of components that are visible on the screen any given time.
+  - `Route`: Is a `React` component that is use to setup a rule betwen a certain `route` that the user visit inside of our application and a set of components that are visible on the screem.
+- Create somo dummy components to test the `routes`
+  ```js
+  const Header = () => <h2>Header</h2>;
+  const Dashboard = () => <h2>Dashboard</h2>;
+  const SurveyNew = () => <h2>SurveyNew</h2>;
+  const Landing = () => <h2>Landing</h2>;
+  ```
+- On of the `return` statement delete the current content
+- Add the following code:
+  ```js
+  const App = () => {
+    return (
+      <div>
+        <BrowserRouter>
+          <div>
+            <Header />
+            <Route exact path="/" component={Landing} />
+            <Route exact path="/surveys" component={Dashboard} />
+            <Route path="/surveys/new" component={SurveyNew} />
+          </div>
+        </BrowserRouter>
+      </div>
+    );
+  };
+  ```
+  - `BrowserRouter` spec that you have a least one child that is why we wrap the `routes` on a `div`
+  - On the `Route` component we send the `path` and the `component` that will be show when we have a url that match with the `path`
+  - Since `Route` send all component that have a match on the path we need to add `exact` on `/` because that `path` will match with every pattern that we choose on other `routes`(Same case in the `surveys`)
+  - The `Route` components are tread as special child that `react-router` need to evalue to decide what to show on the screen. This allow us to put other components on the same container an won't be affected by `react-router` like the `Header` component
+- Run your `servers`
+- You will see the `Header` component content with the current `Route` content
