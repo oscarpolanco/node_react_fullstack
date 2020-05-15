@@ -1164,3 +1164,71 @@ We will have different pages and content that will be visible for the user this 
   - The `Route` components are tread as special child that `react-router` need to evalue to decide what to show on the screen. This allow us to put other components on the same container an won't be affected by `react-router` like the `Header` component
 - Run your `servers`
 - You will see the `Header` component content with the current `Route` content
+
+### Header Component
+
+We will have a `header` that is visible on all the pages and the content of that `header` will change depending on if the user is log or not. Here is the first step to creating the `header`
+
+- On your editor create a file on the `component` diirectory call `Header.js`
+- Inside of the `Header.js` import `React` and `Component` from `react`
+  `import React, { Component } from "react";`
+- Create a class base component
+  ```js
+  class Header extends Component {
+    render() {
+      return <div>Header</div>;
+    }
+  }
+  ```
+- Export the component
+  `export default Header;`
+- On the `App.js` file import the `Header` component
+  `import Header from "./Header";`
+- Delete the `Header` function that we create early
+- Run the `servers`
+- You should see the same content as before
+- Stop your `servers`
+- On your terminal go to the `client` directory
+- Install `materialize-css`
+  `npm install --save materialize-css`
+- On your editor go to the `index.js` file on the `client/src` directory
+- Import the `materialize-css` file
+  `import "materialize-css/dist/css/materialize.min.css";`
+- Go to the `Header.js` file
+- Update the content of the component like this
+  ```js
+  class Header extends Component {
+    render() {
+      return (
+        <div>
+          <nav>
+            <div className="nav-wrapper">
+              <a className="left brand-logo">Emaily</a>
+              <ul className="right">
+                <li>
+                  <a>Login with Google</a>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      );
+    }
+  }
+  ```
+- Go to the `App.js` file
+- Add on the top `div` that have the `Header` and all the `Route` components a `ClassName` of `container`
+- Test on your browser and you should see a `header` with some style
+
+#### Notes
+
+- We will change the structure of the component on the future
+- We will use `materialize-css` for the style of our components because is easy for us to override and add new style to this library
+- When you create a project using `react-create-app` came with a pre-configure `webpack`.
+
+  `webapack` is what is called a `module loader` so this means that we can fit in a number of files and `webpack` automated concatenate together and arrange all these different files in such a way that it spits out one or very few outputs files.
+
+- `webpack` also has what is called `loaders` that instruct `webpack` how to handle other types of files as well not only `js` files.
+- When we import a none `js` file we should add the extension of that file
+- When we use a relative path on the import `webpack` automatically assume that you are targeting a module installed on your `node_modules` directory
+- `materialize-css` require you that at least one of the top-level elements that you use on your page have a class called `container`
