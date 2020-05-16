@@ -1232,3 +1232,73 @@ We will have a `header` that is visible on all the pages and the content of that
 - When we import a none `js` file we should add the extension of that file
 - When we use a relative path on the import `webpack` automatically assume that you are targeting a module installed on your `node_modules` directory
 - `materialize-css` require you that at least one of the top-level elements that you use on your page have a class called `container`
+
+### Handle authentication on the client
+
+Now that we have a basic implementation of the `header` we will need to think if the user is login or not because depending on that we will choose which elements we will have on the `header`.
+
+To now when the user is logged in on our application we will use an `endpoint` that we create when we work on the `server` side of our application that is `/api/current_user` that will return to cookie information as part of the `request`.
+
+To use the `/api/current_user` we will have the following strategy using `Redux`:
+
+- When our `React` application boot up we make sure that our `App` component will call an `action creator`
+- This `action creator` will be responsible for making an `API request` to our backend asking wheater or not the user is login
+  - Inside of this `action creator` we will use the `Axios` library to do a `request` to our backend API; specific a `get` request to `/api/current_user`
+  - This `request` go to the `express API`
+  - Then we going to have a `response` back containing the user if is log in
+  - When we got the `response` back we going to use a library called `redux-thunk` to `dispatch` an `action` to all different `reducers` of our application
+- When the `action` is `dispatch` is going to be sent to our `authReducer`
+  - The `authReducer` will be responsible to look at that action
+  - Then updating some internal flag that said that the user is login or not
+- When we have that update `state` we will change the content of the `Header`
+
+#### Creating our action creator
+
+- On your terminal go to the `client` directory
+- Install `axios` and `redux-thunk`
+  `npm install --save axios redux-thunk`
+- On your editor go to the `index.js` file in the `client` directory
+- Import the `redux-thunk` library
+  `import reduxThunk from "redux-thunk";`
+- Send `reduxThunk` as a parameter of the `applyMiddleware`
+  `const store = createStore(reducers, {}, applyMiddleware(reduxThunk));`
+- On the `src` directory create a folder call `actions` for our `actions creators`
+- Inside of the `actions` directory create a file call `index.js`
+- Import the `axios` library on the `index.js` file
+  `import axios from "axios";`
+- Now create a folder call `types.js` inside of the `actions` directory
+- Inside of the `type.js` file `export` the `type` of our action
+  `export const FETCH_USERS = "fetch_user";`
+- Then inside of the `index.js` file in the `actions` directory import the `type`
+  `import { FETCH_USER } from "./types";`
+- Now create a function call `fetchUser`
+- Inside of the function user the `axios.get` function sending the `/api/current_user` as a parameter
+
+  ```js
+  const fetchUser = () => {
+    axios.get("/api/current_user");
+  };
+  ```
+
+- Now we gonna use the advantage of `redux-thunk` and return a function on our action creator to dispatch the action(To see more on `redux-thunk` go to the `notes` of this section)
+
+  ```js
+  const fetchUser = () => {
+    return function (dispatch) {
+      axios.get("/api/current_user").then((res) =>
+        dispatch({
+          type: FETCH_USER,
+          payload: res,
+        })
+      );
+    };
+  };
+  ```
+
+##### Notes
+
+- As you see we use a relative path when we use `Axios` this may have issues because you `dev` server is on a different domain than the `express` server so you will need to add a `proxy` as we did before. If you notice we add `/api` on the `setupProxy` file that we create before; this will take all the `request` that contains the `/api` and forward to the `express` server.
+
+- The purpose of an `action creator` is to return an `action` that gets send to all different reducers of our application. `Redux` without with only the basic configuration spect that an `action creator` immediately returns an action but at this point of the example, we are adding `redux-thunk` that its only purpose is tho allow us to create `actions creators` that not immediately returns an `action`. With this ability, we now have that the `action creator` produce an `action` and pass it to a `dispatch` function. `Redux` by default when you create an `action` has a `dispatch` function to send that newly created `action` to the different `reducers` but you don't have access to it but with `redux-thunk` we will have access to it.
+
+When we add the `redux-thunk` as a `middleware` on our `index.js` file it is going to inspect our `action creator` and if it returns a function instead of a normal `action` it will automatically run that function and pass a `dispatch` function as an argument and when you call the `dispatch` function you will send the `action` to all of our `reducers`.
