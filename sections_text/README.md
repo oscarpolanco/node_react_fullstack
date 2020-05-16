@@ -1363,7 +1363,7 @@ We want to run our `action creator` when the application boots up so we need a p
 
 ### Refactor the action creator
 
-Just add the `async/await` sintax for this
+Just add the `async/await` sintax for this.
 
 ```js
 export const fetchUser = () => async (dispatch) => {
@@ -1374,3 +1374,44 @@ export const fetchUser = () => async (dispatch) => {
   });
 };
 ```
+
+### AuthReducer returns values
+
+Now that we have our `action creator` set; we need to pick up the `action` to our `authReducer` but first we need to be sure that the payload is what we need on the `authReducer` because at this moment we are sending as a `payload` the `Axios` response but we only care about the `data` property of the object. On the `fetchUser` function at the object that we send on the `dispatch` function on the `payload` property add `res.data`.
+
+First is important that we think first about the `life cycle` of our `reducer` and some of the different values that it will produce.
+
+We are gonna use the `header` as an example. The `header` will show different elements depending on if the user is logged in or not. At this moment when our application boots up, we will do a `request` to see if the user is logged in but imagine that this user has a bad network and the request takes to a long time is this happen we will have some unexpected behavior on the `header`; for example, is we set as a default behavior that the link `Login with Google` is shown when we have the `request` issue we will see the link but will change when we get a response if the user is in fact log in. So to work this situation we gonna have the following:
+
+- Make the request to the backend to get the current user and the request doesn't instantly; while this is happening our `reducer` should return `null` that will mean to us that we are not sure if the user is logged in.
+- If the request is complete, the user is logged in; the `reducer` will return the entire `user model`.
+- If the request is done, the user is not logged in; we return the value of false.
+
+Now we go to do some changes in the `authReducer`:
+
+- First import our `FETCH_USER` type
+  `import { FETCH_USERS } from "../actions/types";`
+- As a default `state` value we gonna set null(This will the value if we are not sure if the user is logged in)
+  `export default function (state = null, action)`
+- Then add a case on the `switch` for our `FETCH_USERS`
+
+  ```js
+  switch (action.type) {
+    case FETCH_USERS:
+    default:
+      return state;
+  }
+  ```
+
+- Now returns the `payload` or `false` to target the other 2 cases that we mention before(Since the `payload` will be an empty `string` we can use a `or` statement to send the correct value)
+
+  ```js
+  switch (action.type) {
+    case FETCH_USERS:
+      return action.payload || false;
+    default:
+      return state;
+  }
+  ```
+
+- Delete the `console.log`
