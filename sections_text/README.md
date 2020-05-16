@@ -1270,7 +1270,7 @@ To use the `/api/current_user` we will have the following strategy using `Redux`
 - Inside of the `type.js` file `export` the `type` of our action
   `export const FETCH_USERS = "fetch_user";`
 - Then inside of the `index.js` file in the `actions` directory import the `type`
-  `import { FETCH_USER } from "./types";`
+  `import { FETCH_USERS } from "./types";`
 - Now create a function call `fetchUser`
 - Inside of the function user the `axios.get` function sending the `/api/current_user` as a parameter
 
@@ -1283,11 +1283,11 @@ To use the `/api/current_user` we will have the following strategy using `Redux`
 - Now we gonna use the advantage of `redux-thunk` and return a function on our action creator to dispatch the action(To see more on `redux-thunk` go to the `notes` of this section)
 
   ```js
-  const fetchUser = () => {
+  export const fetchUser = () => {
     return function (dispatch) {
       axios.get("/api/current_user").then((res) =>
         dispatch({
-          type: FETCH_USER,
+          type: FETCH_USERS,
           payload: res,
         })
       );
@@ -1302,3 +1302,61 @@ To use the `/api/current_user` we will have the following strategy using `Redux`
 - The purpose of an `action creator` is to return an `action` that gets send to all different reducers of our application. `Redux` without with only the basic configuration spect that an `action creator` immediately returns an action but at this point of the example, we are adding `redux-thunk` that its only purpose is tho allow us to create `actions creators` that not immediately returns an `action`. With this ability, we now have that the `action creator` produce an `action` and pass it to a `dispatch` function. `Redux` by default when you create an `action` has a `dispatch` function to send that newly created `action` to the different `reducers` but you don't have access to it but with `redux-thunk` we will have access to it.
 
 When we add the `redux-thunk` as a `middleware` on our `index.js` file it is going to inspect our `action creator` and if it returns a function instead of a normal `action` it will automatically run that function and pass a `dispatch` function as an argument and when you call the `dispatch` function you will send the `action` to all of our `reducers`.
+
+### Make available our action creator to the components
+
+We want to run our `action creator` when the application boots up so we need a place to add it that makes available to all the components that will need that `action` and the place is the `App.js` file but we need to do a little refactoring.
+
+- On your editor go to the `App.js` file
+- At the top import `Component` from `react`
+  `import React, { Component } from "react";`
+- Then refactor the `App` function to be a component like this
+
+  ```js
+  class App extends Component {
+    componentDidMount() {}
+
+    render() {
+      return (
+        <div className="container">
+          <BrowserRouter>
+            <div>
+              <Header />
+              <Route exact path="/" component={Landing} />
+              <Route exact path="/surveys" component={Dashboard} />
+              <Route path="/surveys/new" component={SurveyNew} />
+            </div>
+          </BrowserRouter>
+        </div>
+      );
+    }
+  }
+  ```
+
+- Now import `connect` from `react-redux`
+  `import { connect } from "react-redux";`
+- Also, import our `Action creator`
+  `import * as actions from "../actions";`
+- On the export statement of the `App` component use the connect function
+  `export default connect(null, actions)(App);`
+  - The first argument of the connect function is the `map state` prop; that we are not gonna use on this component that is why we send null
+  - The second argument is all the `action creators` that we wanna use
+  - All the `actions creators` are assing to the `App` component as props
+- Now on the `componentDidMount` call the `fetchUser`
+
+  ```js
+  componentDidMount() {
+    this.props.fetchUser();
+  }
+  ```
+
+- Now for testing purposes go to the `authReducer` file on the `reducers` directory a put a `console.log(action)` before the `switch`
+- Then on your console go to the `server` directory and run the servers
+- Use the inspector console and check the logs
+- You will see at least 4 logs; one for each `action` that comes to our `reducer`. The first 3 are part of the `redux` boot-up process and the other is our `action`
+- Inside on the `object` that we see with the `type: fetch_user` on the `payload` property you will have the `Axios` response `object` that has a property `data` that is empty is the user is logout otherwise will have the same information that we see before on the `api/current_user` endpoint.
+
+#### Notes
+
+- Since we need to trigger the `action creator` when the app boots up; why `componentDidMount` instead of `componentWillMonut`? is because `componentWillMonut` will be called several times and we don't want this behavior for our `action`; the preferred place for calls like this is the `componentDidMount`.
+- `Redux` was built to work without `React` that is why we need the `react-redux` library to work with `React` in particular the `connect` function to give the ability to certain components to call `action creators`.
