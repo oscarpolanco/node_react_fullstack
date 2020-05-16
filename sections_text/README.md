@@ -1360,3 +1360,17 @@ We want to run our `action creator` when the application boots up so we need a p
 
 - Since we need to trigger the `action creator` when the app boots up; why `componentDidMount` instead of `componentWillMonut`? is because `componentWillMonut` will be called several times and we don't want this behavior for our `action`; the preferred place for calls like this is the `componentDidMount`.
 - `Redux` was built to work without `React` that is why we need the `react-redux` library to work with `React` in particular the `connect` function to give the ability to certain components to call `action creators`.
+
+### Refactor the action creator
+
+Just add the `async/await` sintax for this
+
+```js
+export const fetchUser = () => async (dispatch) => {
+  const res = await axios.get("/api/current_user");
+  dispatch({
+    type: FETCH_USERS,
+    payload: res,
+  });
+};
+```
