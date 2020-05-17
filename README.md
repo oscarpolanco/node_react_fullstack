@@ -7,11 +7,25 @@
 - [mongoDB](https://www.mongodb.com/)
   - for this example we use [mongoDB Atlas](https://www.mongodb.com/cloud/atlas/efficiency?utm_source=google&utm_campaign=gs_footprint_row_search_brand_atlas_desktop&utm_term=mongodb%20atlas&utm_medium=cpc_paid_search&utm_ad=e&gclid=Cj0KCQjw17n1BRDEARIsAFDHFezGsmIdQodv9F1O0kOECHGqfF6Ib2uO_aoO1YiesmVWGGp6XjILbpEaArYEEALw_wcB)
   - [here](https://github.com/oscarpolanco/node_react_fullstack/tree/master/sections_text#mongodb-atlas-setup-and-configuration-and-moongose-setup) is a guide to help you to install it
-- We use [create-react-app](https://create-react-app.dev/docs/getting-started/) for the `client`
+
+## Tools and modules on use in the application
+
+- [Express](http://expressjs.com/) on the `server` side of the application
+- [Passport](http://www.passportjs.org/) for the `authentication` process
+- [Create-react-app](https://create-react-app.dev/docs/getting-started/) to generate the `client` side
+- [React](https://reactjs.org/) for the `client` side of our application
+- [Materilize-css](https://materializecss.com/) for the `styles` of the application
+- [Redux](https://redux.js.org/introduction/getting-started) to manage the `state` of our application
+- [React Router](https://www.npmjs.com/package/react-router-dom) for the navigation on the `client`
+
+## Pages
+
+- [Landing page](http://localhost:3000/)
+- [Dashboard](http://localhost:3000/surveys)
 
 ## Step to run the example
 
-- On your console go to the `server` directory
+- On your terminal go to the `server` directory
 - Install all the dependencies using: `npm install`
 - On the `config` directory add a file called `dev.js`
 - On the `dev.js` file `export` and object with the following properties

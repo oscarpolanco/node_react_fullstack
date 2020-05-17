@@ -981,3 +981,605 @@ On other projects you will find a different architecture like having to servers;
 - The server takes the code and turns into a profile information
 - Create a cookie and send that response to the `proxy`
 - The `proxy` send take the pending `request` and response to the browser
+
+## Section 7: Developing the client side
+
+### Refactoring with async/await
+
+As we mention before we gonna refactor some of the `promises` that we use before to use the `async/await` keyword. Here is the first one on the `passport.js` file.
+
+```js
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: keys.googleClientID,
+      clientSecret: keys.googleClientSecret,
+      callbackURL: "/auth/google/callback",
+      proxy: true,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = await User.findOne({ googleId: profile.id });
+      if (existingUser) {
+        return done(null, existingUser);
+      }
+      const user = await new User({
+        googleId: profile.id,
+      }).save();
+      done(null, user);
+    }
+  )
+);
+```
+
+### Client React Setup
+
+Now we gonna begin to work on the client-side of our application. Here are the first steps that we gonna follow:
+
+- Go to the `client/src` directory
+- Delete all files except `serviceWorker.js` and `setupProxy.js`
+- On your terminal go to the `client` directory
+- Now install the `redux`, `react-redux` and `react-router-dom` using:
+  `npm install --save redux react-redux react-router-dom`
+- On your editor go to the `client/src` directory
+- Create a file called `index.js`
+- Import `react` and `react-dom`
+
+  ```js
+  import React from "react";
+  import ReactDOM from "react-dom";
+  ```
+
+- Go to the `client/src` directory
+- Create a new folder call `components`
+- On the `components` folder create a file call `App.js`
+- On the `App.js` file import `react`
+  `import React from "react";`
+- Now create an `App` function that returns some content like this
+
+  ```js
+  const App = () => {
+    return <div>Hi there!</div>;
+  };
+  ```
+
+- Export that function
+  `export default App;`
+- Go to the `index.js` that you create before
+- Import the `App` component
+  `import App from "./components/App";`
+- Now use `react-dom` to render the root component
+  `ReactDOM.render(<App />, document.querySelector("#root"));`
+- On your terminal go to the `server` directory
+- Run both servers using `npm run dev`
+- You should see the content of `App.js` on the browser
+
+#### Notes:
+
+- Escensaly we gonna have a root file and another one that is very close to be a root file:
+  - `index.js`: This file is going to have the initial bootup logic of the `Redux` side of our application another way to see it is that it is gonna put together all the initial data layer considerations of our application.
+  - `App.js`: Is going to be aware of the rendering of our application or the `React` layer of our application.
+
+### Redux initial setup
+
+At this point, we add `React`,`Redux`, and `React-Redux` to our client and we make the basic`React` set up so now we gonna continue with `Redux`.
+
+First, a little bit of `Redux`; is a tool that is gonna help us to store the `state` of our application. On our app, we will have a `React` component that will call an`action creator` that returns an `action` then this`action` is sent to our `reducers` that will update the`state` on our `redux` store that will send back to the `React` component all that update`state`.
+
+But how is this `Redux` logic will connect with our`React` side of our application? We will have a `Provider` tag that is a`React` component that is provided by the `react-redux` (This library purpose is that`React` and `Redux` work together nicely) library on our`index.js` that is gonna wrap the components that we need that the `state` is available.
+
+Here are the steps for the basic septup of `Redux`:
+
+- Import `Provider` from`react-redux`
+    `import {Provider} from" react-redux ";`
+- Import `createStore` and`applyMiddleware` from `redux`
+    `import {createStore, applyMiddleware} from" redux ";`
+- Use the `createStore` to create an intance of the`redux` store
+
+`const store = createStore ()`
+
+- The first argument of the `createStore` is all different reducer of our application (Since we don't have anything yet we will add a function)
+      `const store = createStore (() => [],);`
+
+- The second argument is a inital state of our appliication (Since we are not using server side rendering we don't care to much about this argument so we gonna send an empty object)
+    `const store = createStore (() => [], {});`
+- Finally we apply the `applyMiddleware`
+    `const store = createStore (() => [], {}, applyMiddleware ());`
+- Now on the `<App />` call and wrap it using the `Provider` tag
+    `js ReactDOM.render ( <Provider}> <App /> </Provider>, document.querySelector ("# root") );`
+- Send the `store` as a`prop` of `Provider`
+    `js ReactDOM.render ( <Provider store = {store}> <App /> </Provider>, document.querySelector ("# root") );`
+- Run the servers and test on the browser
+
+### Creating the auth reducer
+
+Now we gonna add our first `reducer` of our app at this time the `authReducer` that is gonna be responsible of records whether or not the user is logged in.
+
+- First on the `client/src` directory create a folder call `reducers`
+- Then inside of the `reducers` folder create a `index.js` file
+- Then create a file call `authReducer.js`
+- On the `authReducer.js` export this function:
+
+  ```js
+  export default function (state = {}, action) {
+    switch (action.type) {
+      default:
+        return state;
+    }
+  }
+  ```
+
+  In this case, we gonna receive the state that initially will be `undefined` that is why we add an empty object as default param and action and put the default case that will be the same state that you received.
+
+- Go to the `index.js` file in the `reducers` directory
+- Import `combineReducers` from `redux`
+  `import { combineReducers } from "redux";`
+- Import the `authReducer` file
+  `import authReducer from "./authReducer";`
+- Export the `combineReducer` with an object that has a property equals to the `authReducer`
+
+  ```js
+  export default combineReducers({
+    auth: authReducer,
+  });
+  ```
+
+  An important aspect of the object that we send to the `combineReducers` is that the `keys` that we provide will be representing the `keys` that are on our `state` object so be careful naming this here.
+
+### React router basic setup
+
+We will have different pages and content that will be visible for the user this means that we will have different `routes` that will control what we see for this we will use `react-router`. Here are the steps for a basic setup
+
+- On the `App.js` file; import `BrowserRouter` and `Route` from `react-router-dom`
+  `import { BrowserRouter, Route } from "react-router-dom";`
+  - `BrowserRouter`: Is the thing that tells `react-route` how to behave. It looks to the current URL then changes the set of components that are visible on the screen any given time.
+  - `Route`: Is a `React` component that is use to setup a rule betwen a certain `route` that the user visit inside of our application and a set of components that are visible on the screem.
+- Create somo dummy components to test the `routes`
+  ```js
+  const Header = () => <h2>Header</h2>;
+  const Dashboard = () => <h2>Dashboard</h2>;
+  const SurveyNew = () => <h2>SurveyNew</h2>;
+  const Landing = () => <h2>Landing</h2>;
+  ```
+- On of the `return` statement delete the current content
+- Add the following code:
+  ```js
+  const App = () => {
+    return (
+      <div>
+        <BrowserRouter>
+          <div>
+            <Header />
+            <Route exact path="/" component={Landing} />
+            <Route exact path="/surveys" component={Dashboard} />
+            <Route path="/surveys/new" component={SurveyNew} />
+          </div>
+        </BrowserRouter>
+      </div>
+    );
+  };
+  ```
+  - `BrowserRouter` spec that you have a least one child that is why we wrap the `routes` on a `div`
+  - On the `Route` component we send the `path` and the `component` that will be show when we have a url that match with the `path`
+  - Since `Route` send all component that have a match on the path we need to add `exact` on `/` because that `path` will match with every pattern that we choose on other `routes`(Same case in the `surveys`)
+  - The `Route` components are tread as special child that `react-router` need to evalue to decide what to show on the screen. This allow us to put other components on the same container an won't be affected by `react-router` like the `Header` component
+- Run your `servers`
+- You will see the `Header` component content with the current `Route` content
+
+### Header Component
+
+We will have a `header` that is visible on all the pages and the content of that `header` will change depending on if the user is log or not. Here is the first step to creating the `header`
+
+- On your editor create a file on the `component` diirectory call `Header.js`
+- Inside of the `Header.js` import `React` and `Component` from `react`
+  `import React, { Component } from "react";`
+- Create a class base component
+  ```js
+  class Header extends Component {
+    render() {
+      return <div>Header</div>;
+    }
+  }
+  ```
+- Export the component
+  `export default Header;`
+- On the `App.js` file import the `Header` component
+  `import Header from "./Header";`
+- Delete the `Header` function that we create early
+- Run the `servers`
+- You should see the same content as before
+- Stop your `servers`
+- On your terminal go to the `client` directory
+- Install `materialize-css`
+  `npm install --save materialize-css`
+- On your editor go to the `index.js` file on the `client/src` directory
+- Import the `materialize-css` file
+  `import "materialize-css/dist/css/materialize.min.css";`
+- Go to the `Header.js` file
+- Update the content of the component like this
+  ```js
+  class Header extends Component {
+    render() {
+      return (
+        <div>
+          <nav>
+            <div className="nav-wrapper">
+              <a className="left brand-logo">Emaily</a>
+              <ul className="right">
+                <li>
+                  <a>Login with Google</a>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      );
+    }
+  }
+  ```
+- Go to the `App.js` file
+- Add on the top `div` that have the `Header` and all the `Route` components a `ClassName` of `container`
+- Test on your browser and you should see a `header` with some style
+
+#### Notes
+
+- We will change the structure of the component on the future
+- We will use `materialize-css` for the style of our components because is easy for us to override and add new style to this library
+- When you create a project using `react-create-app` came with a pre-configure `webpack`.
+
+  `webapack` is what is called a `module loader` so this means that we can fit in a number of files and `webpack` automated concatenate together and arrange all these different files in such a way that it spits out one or very few outputs files.
+
+- `webpack` also has what is called `loaders` that instruct `webpack` how to handle other types of files as well not only `js` files.
+- When we import a none `js` file we should add the extension of that file
+- When we use a relative path on the import `webpack` automatically assume that you are targeting a module installed on your `node_modules` directory
+- `materialize-css` require you that at least one of the top-level elements that you use on your page have a class called `container`
+
+### Handle authentication on the client
+
+Now that we have a basic implementation of the `header` we will need to think if the user is login or not because depending on that we will choose which elements we will have on the `header`.
+
+To now when the user is logged in on our application we will use an `endpoint` that we create when we work on the `server` side of our application that is `/api/current_user` that will return to cookie information as part of the `request`.
+
+To use the `/api/current_user` we will have the following strategy using `Redux`:
+
+- When our `React` application boot up we make sure that our `App` component will call an `action creator`
+- This `action creator` will be responsible for making an `API request` to our backend asking wheater or not the user is login
+  - Inside of this `action creator` we will use the `Axios` library to do a `request` to our backend API; specific a `get` request to `/api/current_user`
+  - This `request` go to the `express API`
+  - Then we going to have a `response` back containing the user if is log in
+  - When we got the `response` back we going to use a library called `redux-thunk` to `dispatch` an `action` to all different `reducers` of our application
+- When the `action` is `dispatch` is going to be sent to our `authReducer`
+  - The `authReducer` will be responsible to look at that action
+  - Then updating some internal flag that said that the user is login or not
+- When we have that update `state` we will change the content of the `Header`
+
+#### Creating our action creator
+
+- On your terminal go to the `client` directory
+- Install `axios` and `redux-thunk`
+  `npm install --save axios redux-thunk`
+- On your editor go to the `index.js` file in the `client` directory
+- Import the `redux-thunk` library
+  `import reduxThunk from "redux-thunk";`
+- Send `reduxThunk` as a parameter of the `applyMiddleware`
+  `const store = createStore(reducers, {}, applyMiddleware(reduxThunk));`
+- On the `src` directory create a folder call `actions` for our `actions creators`
+- Inside of the `actions` directory create a file call `index.js`
+- Import the `axios` library on the `index.js` file
+  `import axios from "axios";`
+- Now create a folder call `types.js` inside of the `actions` directory
+- Inside of the `type.js` file `export` the `type` of our action
+  `export const FETCH_USERS = "fetch_user";`
+- Then inside of the `index.js` file in the `actions` directory import the `type`
+  `import { FETCH_USERS } from "./types";`
+- Now create a function call `fetchUser`
+- Inside of the function user the `axios.get` function sending the `/api/current_user` as a parameter
+
+  ```js
+  const fetchUser = () => {
+    axios.get("/api/current_user");
+  };
+  ```
+
+- Now we gonna use the advantage of `redux-thunk` and return a function on our action creator to dispatch the action(To see more on `redux-thunk` go to the `notes` of this section)
+
+  ```js
+  export const fetchUser = () => {
+    return function (dispatch) {
+      axios.get("/api/current_user").then((res) =>
+        dispatch({
+          type: FETCH_USERS,
+          payload: res,
+        })
+      );
+    };
+  };
+  ```
+
+##### Notes
+
+- As you see we use a relative path when we use `Axios` this may have issues because you `dev` server is on a different domain than the `express` server so you will need to add a `proxy` as we did before. If you notice we add `/api` on the `setupProxy` file that we create before; this will take all the `request` that contains the `/api` and forward to the `express` server.
+
+- The purpose of an `action creator` is to return an `action` that gets send to all different reducers of our application. `Redux` without with only the basic configuration spect that an `action creator` immediately returns an action but at this point of the example, we are adding `redux-thunk` that its only purpose is tho allow us to create `actions creators` that not immediately returns an `action`. With this ability, we now have that the `action creator` produce an `action` and pass it to a `dispatch` function. `Redux` by default when you create an `action` has a `dispatch` function to send that newly created `action` to the different `reducers` but you don't have access to it but with `redux-thunk` we will have access to it.
+
+When we add the `redux-thunk` as a `middleware` on our `index.js` file it is going to inspect our `action creator` and if it returns a function instead of a normal `action` it will automatically run that function and pass a `dispatch` function as an argument and when you call the `dispatch` function you will send the `action` to all of our `reducers`.
+
+### Make available our action creator to the components
+
+We want to run our `action creator` when the application boots up so we need a place to add it that makes available to all the components that will need that `action` and the place is the `App.js` file but we need to do a little refactoring.
+
+- On your editor go to the `App.js` file
+- At the top import `Component` from `react`
+  `import React, { Component } from "react";`
+- Then refactor the `App` function to be a component like this
+
+  ```js
+  class App extends Component {
+    componentDidMount() {}
+
+    render() {
+      return (
+        <div className="container">
+          <BrowserRouter>
+            <div>
+              <Header />
+              <Route exact path="/" component={Landing} />
+              <Route exact path="/surveys" component={Dashboard} />
+              <Route path="/surveys/new" component={SurveyNew} />
+            </div>
+          </BrowserRouter>
+        </div>
+      );
+    }
+  }
+  ```
+
+- Now import `connect` from `react-redux`
+  `import { connect } from "react-redux";`
+- Also, import our `Action creator`
+  `import * as actions from "../actions";`
+- On the export statement of the `App` component use the connect function
+  `export default connect(null, actions)(App);`
+  - The first argument of the connect function is the `map state` prop; that we are not gonna use on this component that is why we send null
+  - The second argument is all the `action creators` that we wanna use
+  - All the `actions creators` are assing to the `App` component as props
+- Now on the `componentDidMount` call the `fetchUser`
+
+  ```js
+  componentDidMount() {
+    this.props.fetchUser();
+  }
+  ```
+
+- Now for testing purposes go to the `authReducer` file on the `reducers` directory a put a `console.log(action)` before the `switch`
+- Then on your console go to the `server` directory and run the servers
+- Use the inspector console and check the logs
+- You will see at least 4 logs; one for each `action` that comes to our `reducer`. The first 3 are part of the `redux` boot-up process and the other is our `action`
+- Inside on the `object` that we see with the `type: fetch_user` on the `payload` property you will have the `Axios` response `object` that has a property `data` that is empty is the user is logout otherwise will have the same information that we see before on the `api/current_user` endpoint.
+
+#### Notes
+
+- Since we need to trigger the `action creator` when the app boots up; why `componentDidMount` instead of `componentWillMonut`? is because `componentWillMonut` will be called several times and we don't want this behavior for our `action`; the preferred place for calls like this is the `componentDidMount`.
+- `Redux` was built to work without `React` that is why we need the `react-redux` library to work with `React` in particular the `connect` function to give the ability to certain components to call `action creators`.
+
+### Refactor the action creator
+
+Just add the `async/await` sintax for this.
+
+```js
+export const fetchUser = () => async (dispatch) => {
+  const res = await axios.get("/api/current_user");
+  dispatch({
+    type: FETCH_USERS,
+    payload: res,
+  });
+};
+```
+
+### AuthReducer returns values
+
+Now that we have our `action creator` set; we need to pick up the `action` to our `authReducer` but first we need to be sure that the payload is what we need on the `authReducer` because at this moment we are sending as a `payload` the `Axios` response but we only care about the `data` property of the object. On the `fetchUser` function at the object that we send on the `dispatch` function on the `payload` property add `res.data`.
+
+First is important that we think first about the `life cycle` of our `reducer` and some of the different values that it will produce.
+
+We are gonna use the `header` as an example. The `header` will show different elements depending on if the user is logged in or not. At this moment when our application boots up, we will do a `request` to see if the user is logged in but imagine that this user has a bad network and the request takes to a long time is this happen we will have some unexpected behavior on the `header`; for example, is we set as a default behavior that the link `Login with Google` is shown when we have the `request` issue we will see the link but will change when we get a response if the user is in fact log in. So to work this situation we gonna have the following:
+
+- Make the request to the backend to get the current user and the request doesn't instantly; while this is happening our `reducer` should return `null` that will mean to us that we are not sure if the user is logged in.
+- If the request is complete, the user is logged in; the `reducer` will return the entire `user model`.
+- If the request is done, the user is not logged in; we return the value of false.
+
+Now we go to do some changes in the `authReducer`:
+
+- First import our `FETCH_USER` type
+  `import { FETCH_USERS } from "../actions/types";`
+- As a default `state` value we gonna set null(This will the value if we are not sure if the user is logged in)
+  `export default function (state = null, action)`
+- Then add a case on the `switch` for our `FETCH_USERS`
+
+  ```js
+  switch (action.type) {
+    case FETCH_USERS:
+    default:
+      return state;
+  }
+  ```
+
+- Now returns the `payload` or `false` to target the other 2 cases that we mention before(Since the `payload` will be an empty `string` we can use a `or` statement to send the correct value)
+
+  ```js
+  switch (action.type) {
+    case FETCH_USERS:
+      return action.payload || false;
+    default:
+      return state;
+  }
+  ```
+
+- Delete the `console.log`
+
+### Accessing the state in the header
+
+Now we need to connect our `header` with the `redux store` to get the value of the `state` that we need in this case the `auth state`. For this we update the `Header` compoenent following the next steps:
+
+- Connect the `Header` component with the `redux store` importing the `connect` function
+  `import { connect } from "react-redux";`
+- On the export statement add the `connect` function
+  `export default connect()(Header);`
+- Now create a function call `mapStateToProps`
+
+  ```js
+  function mapStateToProps({ auth }) {
+    return { auth };
+  }
+  ```
+
+  - The `mapStateToProps` will be call with the entire `state` object out of the `redux store`. We use `Es6` to extract only the part of the object that we need in this case `auth`
+  - We need to return an object that is gonna be pass as a prop of the `Header` component. We use `Es6` to only have to put the `auth` parameter in the object so we don't have to tupe the same twice like this: `auth:auth`
+
+- Send `mapStateToProps` as an argument on the `connect` function
+  `export default connect(mapStateToProps)(Header);`
+- Now at the before of the `render` function create another one call `renderContent`
+
+  ```js
+  renderContent() {
+    switch (this.props.auth) {
+      case null:
+        return;
+      case false:
+        return (
+          <li>
+            <a href="/auth/google">Login With Google</a>
+          </li>
+        );
+      default:
+        return (
+          <li>
+            <a>Logout</a>
+          </li>
+        );
+    }
+  }
+  ```
+
+- Replace the `li` element with the `renderContent` function
+
+  ```js
+  render() {
+    return (
+      <div>
+        <nav>
+          <div className="nav-wrapper">
+            <a className="left brand-logo">Emaily</a>
+            <ul className="right">{this.renderContent()}</ul>
+          </div>
+        </nav>
+      </div>
+    );
+  }
+  ```
+
+- Now using the `server` side authentication process login and logout to test if the text on the `header` change
+
+### Redirecting a user on auth
+
+If you notice if you lunch the authentication process clicking on the `login` link that we just did after the user grant access to our application we got an error. This is because we need to set what the `route handler` that controls the `auth/google` endpoint should do after `passport` finish the authentication process. So we did a little update on our `handler` like you see next:
+
+- First, on your editor go to the `server/routes` directory
+- On the `authRoutes.js` search for the `/auth/google` route handler
+- Send an extra parameter to the `route handler` that will be a function
+
+  ```js
+  app.get(
+    "/auth/google/callback",
+    passport.authenticate("google"),
+    (req, res) => {}
+  );
+  ```
+
+- Use the `redirect` function of the `res` object; sending `/surveys` to send the user to the `dashboard` page after the authentication process is done
+
+  ```js
+  app.get(
+    "/auth/google/callback",
+    passport.authenticate("google"),
+    (req, res) => {
+      res.redirect("/surveys");
+    }
+  );
+  ```
+
+- Now on your terminal and run the `servers`
+- Login using the link that we create and when you finish the process you will be redirected to the `dashboard` page
+
+### Redirect on logout
+
+Now we need to remember that the user is considered logged in when we have a cookie with some kind of information that we provide on the `server` side of our application so to `logout` we need to clean that cookie information to consider that the user is `logout` so we need to decide one of this 2 approach; make an `ajax` request or add a link that refreshes the page on `logout`
+
+- Full `HTTP` request: The user clicks an `anchor` tag that will cause that the entire browser page to refresh to navigate to the `/api/logout` endpoint then the `server` will `logout` the user and redirect back to the client-side.
+
+- Ajax request: When the user clicks a button we don't do any class of browser navigation or any `https` request to the `server` instead we can do a little ajax request to the `/api/logout` then the response of the `server` will tell the browser that clean the cookie but after that is up to us update the `redux` side of our application.
+
+Between the two options, the first one is easier to implement but the other is much faster to the user because the browser is not changing `HTML` documents. All depends on the requirements of your application in our case we gonna up to the first approach because we don't have any requirement on this matter.
+
+Now we gonna implement that approach:
+
+- First go to the `Header` component on your editor
+- Search `renderContent` and add `/api/logout` to the `logout` anchor
+- Now go to the `authRoutes` file on the `server/routes` directory
+- Search for the `/api/logout` handler
+- Delete the `req.send(req.user)`
+- Add `req.redirect('/')` to redirect on `logout`
+- Go to your terminal and run the `servers`
+- Test the `logout` process
+
+### Landing component
+
+Now we need to add a component for the `landing` page so we can begin to add elements that we need the user to see but at this moment we just put a basic content for the new component
+
+- First go to the `components` directory
+- Create a file call `Landing.js`
+- Add a basic functional component like the following
+
+  ```js
+  import React from "react";
+
+  const Landing = () => {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <h1>Emaily!</h1>
+        Collect feedback from your users
+      </div>
+    );
+  };
+
+  export default Landing;
+  ```
+
+- Now go to the `App.js` file
+- Import the `landing` component
+  `import Landing from "./Landing";`
+- Delete the dummy `Landing` function that we create before
+
+### Link Tag
+
+Now we need one thing on the `header` that is the logo that needs to redirect to the `landing` page is the user is not logged in or to the `dashboard` otherwise. To do this we gonna use the `Link` component from `react-router-dom`.
+
+To handle all the navigation inside of our application we gonna use the `Link` tag that will navigate all the routes that we define on our application but somethings like the `sign in with Google` link we need an `anchor` tag. The `Link` tag will navigate to a different route rendered by `react-router` and the `anchor` will navigate to a completely different `HTML` document.
+
+- Now go to the `Header` component file
+- Import `Link` form `react-router-dom`
+  `import { Link } from "react-router-dom";`
+- On the `render` function change the `Emayli` anchor tag for a `Link` tag
+
+  ```js
+  <Link className="left brand-logo">Emaily</Link>
+  ```
+
+- Add the `to` property with a ternary operator using the `auth` state to decide is the link is `/survey` or `/`
+
+  ```js
+  <Link to={this.props.auth ? "/surveys" : "/"} className="left brand-logo">
+    Emaily
+  </Link>
+  ```
+
+- Now test on the browser if the logo redirects to the correct page on `logged in` and `logout`
