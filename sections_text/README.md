@@ -1558,3 +1558,28 @@ Now we need to add a component for the `landing` page so we can begin to add ele
 - Import the `landing` component
   `import Landing from "./Landing";`
 - Delete the dummy `Landing` function that we create before
+
+### Link Tag
+
+Now we need one thing on the `header` that is the logo that needs to redirect to the `landing` page is the user is not logged in or to the `dashboard` otherwise. To do this we gonna use the `Link` component from `react-router-dom`.
+
+To handle all the navigation inside of our application we gonna use the `Link` tag that will navigate all the routes that we define on our application but somethings like the `sign in with Google` link we need an `anchor` tag. The `Link` tag will navigate to a different route rendered by `react-router` and the `anchor` will navigate to a completely different `HTML` document.
+
+- Now go to the `Header` component file
+- Import `Link` form `react-router-dom`
+  `import { Link } from "react-router-dom";`
+- On the `render` function change the `Emayli` anchor tag for a `Link` tag
+
+  ```js
+  <Link className="left brand-logo">Emaily</Link>
+  ```
+
+- Add the `to` property with a ternary operator using the `auth` state to decide is the link is `/survey` or `/`
+
+  ```js
+  <Link to={this.props.auth ? "/surveys" : "/"} className="left brand-logo">
+    Emaily
+  </Link>
+  ```
+
+- Now test on the browser if the logo redirects to the correct page on `logged in` and `logout`
