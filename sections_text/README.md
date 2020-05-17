@@ -1509,3 +1509,24 @@ If you notice if you lunch the authentication process clicking on the `login` li
 
 - Now on your terminal and run the `servers`
 - Login using the link that we create and when you finish the process you will be redirected to the `dashboard` page
+
+### Redirect on logout
+
+Now we need to remember that the user is considered logged in when we have a cookie with some kind of information that we provide on the `server` side of our application so to `logout` we need to clean that cookie information to consider that the user is `logout` so we need to decide one of this 2 approach; make an `ajax` request or add a link that refreshes the page on `logout`
+
+- Full `HTTP` request: The user clicks an `anchor` tag that will cause that the entire browser page to refresh to navigate to the `/api/logout` endpoint then the `server` will `logout` the user and redirect back to the client-side.
+
+- Ajax request: When the user clicks a button we don't do any class of browser navigation or any `https` request to the `server` instead we can do a little ajax request to the `/api/logout` then the response of the `server` will tell the browser that clean the cookie but after that is up to us update the `redux` side of our application.
+
+Between the two options, the first one is easier to implement but the other is much faster to the user because the browser is not changing `HTML` documents. All depends on the requirements of your application in our case we gonna up to the first approach because we don't have any requirement on this matter.
+
+Now we gonna implement that approach:
+
+- First go to the `Header` component on your editor
+- Search `renderContent` and add `/api/logout` to the `logout` anchor
+- Now go to the `authRoutes` file on the `server/routes` directory
+- Search for the `/api/logout` handler
+- Delete the `req.send(req.user)`
+- Add `req.redirect('/')` to redirect on `logout`
+- Go to your terminal and run the `servers`
+- Test the `logout` process
