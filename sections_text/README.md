@@ -1443,11 +1443,19 @@ Now we need to connect our `header` with the `redux store` to get the value of t
   renderContent() {
     switch (this.props.auth) {
       case null:
-        return "Still deciding";
+        return;
       case false:
-        return "Im logout";
+        return (
+          <li>
+            <a href="/auth/google">Login With Google</a>
+          </li>
+        );
       default:
-        return "Im logged in";
+        return (
+          <li>
+            <a>Logout</a>
+          </li>
+        );
     }
   }
   ```
