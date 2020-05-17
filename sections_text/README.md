@@ -1530,3 +1530,31 @@ Now we gonna implement that approach:
 - Add `req.redirect('/')` to redirect on `logout`
 - Go to your terminal and run the `servers`
 - Test the `logout` process
+
+### Landing component
+
+Now we need to add a component for the `landing` page so we can begin to add elements that we need the user to see but at this moment we just put a basic content for the new component
+
+- First go to the `components` directory
+- Create a file call `Landing.js`
+- Add a basic functional component like the following
+
+  ```js
+  import React from "react";
+
+  const Landing = () => {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <h1>Emaily!</h1>
+        Collect feedback from your users
+      </div>
+    );
+  };
+
+  export default Landing;
+  ```
+
+- Now go to the `App.js` file
+- Import the `landing` component
+  `import Landing from "./Landing";`
+- Delete the dummy `Landing` function that we create before
