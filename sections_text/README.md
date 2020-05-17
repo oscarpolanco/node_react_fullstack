@@ -1415,3 +1415,58 @@ Now we go to do some changes in the `authReducer`:
   ```
 
 - Delete the `console.log`
+
+### Accessing the state in the header
+
+Now we need to connect our `header` with the `redux store` to get the value of the `state` that we need in this case the `auth state`. For this we update the `Header` compoenent following the next steps:
+
+- Connect the `Header` component with the `redux store` importing the `connect` function
+  `import { connect } from "react-redux";`
+- On the export statement add the `connect` function
+  `export default connect()(Header);`
+- Now create a function call `mapStateToProps`
+
+  ```js
+  function mapStateToProps({ auth }) {
+    return { auth };
+  }
+  ```
+
+  - The `mapStateToProps` will be call with the entire `state` object out of the `redux store`. We use `Es6` to extract only the part of the object that we need in this case `auth`
+  - We need to return an object that is gonna be pass as a prop of the `Header` component. We use `Es6` to only have to put the `auth` parameter in the object so we don't have to tupe the same twice like this: `auth:auth`
+
+- Send `mapStateToProps` as an argument on the `connect` function
+  `export default connect(mapStateToProps)(Header);`
+- Now at the before of the `render` function create another one call `renderContent`
+
+  ```js
+  renderContent() {
+    switch (this.props.auth) {
+      case null:
+        return "Still deciding";
+      case false:
+        return "Im logout";
+      default:
+        return "Im logged in";
+    }
+  }
+  ```
+
+- Replace the `li` element with the `renderContent` function
+
+  ```js
+  render() {
+    return (
+      <div>
+        <nav>
+          <div className="nav-wrapper">
+            <a className="left brand-logo">Emaily</a>
+            <ul className="right">{this.renderContent()}</ul>
+          </div>
+        </nav>
+      </div>
+    );
+  }
+  ```
+
+- Now using the `server` side authentication process login and logout to test if the text on the `header` change
