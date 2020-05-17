@@ -1478,3 +1478,34 @@ Now we need to connect our `header` with the `redux store` to get the value of t
   ```
 
 - Now using the `server` side authentication process login and logout to test if the text on the `header` change
+
+### Redirecting a user on auth
+
+If you notice if you lunch the authentication process clicking on the `login` link that we just did after the user grant access to our application we got an error. This is because we need to set what the `route handler` that controls the `auth/google` endpoint should do after `passport` finish the authentication process. So we did a little update on our `handler` like you see next:
+
+- First, on your editor go to the `server/routes` directory
+- On the `authRoutes.js` search for the `/auth/google` route handler
+- Send an extra parameter to the `route handler` that will be a function
+
+  ```js
+  app.get(
+    "/auth/google/callback",
+    passport.authenticate("google"),
+    (req, res) => {}
+  );
+  ```
+
+- Use the `redirect` function of the `res` object; sending `/surveys` to send the user to the `dashboard` page after the authentication process is done
+
+  ```js
+  app.get(
+    "/auth/google/callback",
+    passport.authenticate("google"),
+    (req, res) => {
+      res.redirect("/surveys");
+    }
+  );
+  ```
+
+- Now on your terminal and run the `servers`
+- Login using the link that we create and when you finish the process you will be redirected to the `dashboard` page
