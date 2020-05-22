@@ -1583,3 +1583,29 @@ To handle all the navigation inside of our application we gonna use the `Link` t
   ```
 
 - Now test on the browser if the logo redirects to the correct page on `logged in` and `logout`
+
+## Section 8: Handling Payments
+
+In this section we will begin the process of charge for the `surveys` that a user is gonna create. So we will have and `Add credit card` button that will show a form on which we will submit our credit card information to gain a`credit` (1 dollar is 1 `credit`) that mean for each credit that you have you will have access to create a `survey` and send a bunch of emails that you need.
+
+### Rules of Billing
+
+Why we take this approach well here are some considerations on it:
+
+#### We are bad at security
+
+We got a deploy to `Heroku` but we don't spend second thinking on security maybe all is secure out of the box but the fact that we don't think on it is the proof that we don't always are thinking on security for this reason we have some tips to go around it.
+
+- Never accept raw credit cards numbers (More on this later)
+
+- Never store credit card numbers; for this we gonna use a third party API that will have all the billing infrastructure and all the web security around it.
+
+- Always use an outside payment processor; on this project we gonna use [stripe](https://stripe.com/) that make take care of all the payment processes and the security around it.
+
+#### Billing is hard
+
+Even with a third party company that handles all this process that spends millions to make this process as easy as possible for us it will continue to be a hard process that requires a lot of thought.
+
+- Possible to avoid monthly payment / multiple plans ?; Add complexity to all the process, for example, let's imagine that we set 2 plans; one with 10 surveys and the other with 50 surveys; a user buy the first one use 5 surveys but decided that he want the other now the user use the half of the surveys so how exactly we are gonna charge it. This means a more complex logic to get around all this type of situation.
+
+- Fraud and chargeback are a pain; Accepting credit cards to your applications eventually you will have that at least one of your users send a fraudulent credit card or when a user get the built they decide that they actually don't want to pay for the service for some reason and will add more complexity to the process.
