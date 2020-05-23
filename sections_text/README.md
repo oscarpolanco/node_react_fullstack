@@ -1609,3 +1609,14 @@ Even with a third party company that handles all this process that spends millio
 - Possible to avoid monthly payment / multiple plans ?; Add complexity to all the process, for example, let's imagine that we set 2 plans; one with 10 surveys and the other with 50 surveys; a user buy the first one use 5 surveys but decided that he want the other now the user use the half of the surveys so how exactly we are gonna charge it. This means a more complex logic to get around all this type of situation.
 
 - Fraud and chargeback are a pain; Accepting credit cards to your applications eventually you will have that at least one of your users send a fraudulent credit card or when a user get the built they decide that they actually don't want to pay for the service for some reason and will add more complexity to the process.
+
+### Stripe billing process
+
+- The user clicks on a button that we gonna add that reads `Add Credits`
+- Then we tell `stripe` to generate a credit card form and show it to our user. When we are working with `stripe` we traditionally install a plugin author by `stripe` into our `React` application so everything we need to do the billing process we tell that plugin to generate and show the form that our users will use.
+- When the user got the form it will enter the credit card detail
+- Then all the information of the form will be taken by the `stripe` plugin and will send it to the `stripe` API
+- After that `stripe` will send a `token` that will represent the pending charge. This will represent the authorization step that `stripe` have this mean that will allow your app to charge the user
+- We take that `token` and send it to our API
+- Our API will send a follow-up request with the `token` to the `stripe` API and confirm the charge was successful. This means that we put the charge that we need and send it with the `token` to complete the process
+- And finally, we gonna add some `credits` to our user's account
