@@ -1620,3 +1620,57 @@ Even with a third party company that handles all this process that spends millio
 - We take that `token` and send it to our API
 - Our API will send a follow-up request with the `token` to the `stripe` API and confirm the charge was successful. This means that we put the charge that we need and send it with the `token` to complete the process
 - And finally, we gonna add some `credits` to our user's account
+
+### Adding the Stripe dependency
+
+#### Create a stripe account
+
+First, we need to create an account on the [stripe page](https://stripe.com/):
+
+- Click on the `start now` button on the front page
+- Fill the information of the form
+- Click on the `create account` button
+- For this example, you can `verify` your account but doesn't activate your account because you will need to fill a lot of information for production porpuses but for this example, we don't need it
+- Your account will automatically view `test data`; this means that your account is on `test mode` and you will have the opportunity to send `test` data
+
+#### Adding the checkout library and its configuration
+
+After you got the account we need to install a module created by `stripe` that will be on charge of generating the form that the user will see and communicate with the `stripe` API but we are using `react-stripe-checkout` instead of the `checkout.js` because the second one assumes that you are using libraries such as `jQuery` or `Angular` and don't work out of the box with `React`
+
+- Now on your terminal go to the `client` directory
+- Install `react-stripe-checkout` using: `npm install --save react-stripe-checkout`
+- Now we need to add the `keys` that we need on the project; first on the `server/config` directory go to the `dev.js` file and add the follwing:
+
+```js
+stripePublishableKey: "pk_test_my_public_key",
+stripeSecretKey: "sk_test_my_secret_key"
+```
+
+To get those keys; go to your `stripe` dashboard and on the `API` section. Be careful with the `secret` because we don't want to share it with the public also be careful with the names on the config files because if we got a typo will see the error after we finish with the frontend of our application.
+
+- Now got to the `prod.js` file in the `server/config` directory and add the following:
+
+```js
+stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+stripeSecretKey: process.env.STRIPE_SECRET_KEY
+```
+
+- Now go to the `Heroku` dashboard on the `setting` options
+- On the `config vars` sections click on `Reveal config vars`
+- Add the `STRIPE_PUBLISHABLE_KEY` and the `STRIPE_SECRET_KEY` with it values
+- Now we need to add the `keys` on the `client` actually just the `public key`. On your editor go to the `client` directory
+- Create a file called `.env.development` and add the following:
+  `REACT_APP_STRIPE_KEY=pk_test_my_public_key`
+- Now on the same directory create a file call `.env.production` and add the following:
+  `REACT_APP_STRIPE_KEY=pk_test_my_public_key`
+- Now run on your `index.js` file on the `client` directory log the key calling it like this:
+  `process.env.REACT_APP_STRIPE_KEY`
+- Run your `servers` again
+- You should see the `key` on the console of your browser
+- For this project we gonna `ignore` both `.env` file son on the `.gitignore` add both files
+
+##### Notes:
+
+- On the frontend of our application, we are using `Es6` modules and the backend are using common js modules to require files so this means on our backend we can have some amount of logic before the `require` statement(Like our `key.js` file) but on `Es6` does not allow any type of logic before an `import` statement that is one of the reasons that we don't use the same config file on the `client`.
+- If we `import` the config file in our `client`; when we compile our project all the content of the file will be available to the public; that is another reason that we don't use our config file of the `server`.
+- When you are setting an `environment variable` using `create_react_app` you need to add the `REACT_APP` as a prefix on your `environment variable` name.
