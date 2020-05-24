@@ -1780,3 +1780,51 @@ Now that we got all the configuration that we need; we can use the `checkout` li
 - `livemode` should be `false` because we are on `test` mode
 - `type` is the type of payment in this case `card` because we use a credit card
 - `card` object that has some information on the credit card that you just submitted
+
+### Reusing Action type
+
+Now that we receive a `token` from the `stripe` API we need to then send that to our API to do a follow-up request to complete the transaction and add the `credits` to our user. For this purpose, we gonna add a new field on the `user` model that we already have that contain the amount of `credits` that the user has this will allow users to use the same state that we already have and reuse some of the `action` logic that we already build for the authentication flow because each time we update the user model we will need to refresh the user information like we did when the user logs in.
+
+Now we follow the next process:
+
+- On your editor go to the `client/actions` directory
+- On the index file add the following code:
+
+  ```js
+  export const handleToken = (token) => async (dispatch) => {
+    const res = await axios.post("/api/stripe", token);
+
+    dispatch({
+      type: FETCH_USERS,
+      payload: res.data,
+    });
+  };
+  ```
+
+  Since we are using and updating the user model to add the `credits` after the payment we can use the same `action type` of fetching the user and since we are using a `post` function we gonna receive a response that will contain the user information that we gonna use on the payload. The `endpoint` that we use is not yet created on our API.
+
+- Now we need to go to the `Payment` component to use the `action`
+- Import the `connect` function and the `actions`
+
+  ```js
+  import { connect } from "react-redux";
+  import * as actions from "../actions";
+  ```
+
+- On the `export` statement use the connect function to make available the `actions` on the component
+  `export default connect(null, actions)(Payments);`
+- Now go to the `token` prop that the `StripeCheckout` receive and update the `callback` function to use the `action`
+
+  ```js
+  <StripeCheckout
+    name="Emaily"
+    description="$5 for 5 emails credits"
+    amount={500}
+    token={(token) => this.props.handleToken(token)}
+    stripeKey={process.env.REACT_APP_STRIPE_KEY}
+  >
+    <button className="btn">Add Credits</button>
+  </StripeCheckout>
+  ```
+
+- Now test on your browser. You will receive a `404` error after you submit the example credit card information but that is expected since we don't create the `/api/stripe` yet
