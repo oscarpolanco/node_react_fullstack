@@ -1674,3 +1674,109 @@ stripeSecretKey: process.env.STRIPE_SECRET_KEY
 - On the frontend of our application, we are using `Es6` modules and the backend are using common js modules to require files so this means on our backend we can have some amount of logic before the `require` statement(Like our `key.js` file) but on `Es6` does not allow any type of logic before an `import` statement that is one of the reasons that we don't use the same config file on the `client`.
 - If we `import` the config file in our `client`; when we compile our project all the content of the file will be available to the public; that is another reason that we don't use our config file of the `server`.
 - When you are setting an `environment variable` using `create_react_app` you need to add the `REACT_APP` as a prefix on your `environment variable` name.
+
+### Payment component
+
+Now that we got all the configuration that we need; we can use the `checkout` library. Now by default when you render the `stripe` module as a component it will render a button that the user can click and when is clicked the form will appear on the screen so we gonna first create a component that uses the `stripe` module and use it on the `header`.
+
+- First, on your editor go to the `client/component` directory
+- Create a file called `Payments.js`
+- Import `React` and the `stripe checkout` modules
+
+  ```js
+  import React, { Component } from "react";
+  import StripeCheckout from "react-stripe-checkout";
+  ```
+
+- Now create a class component that renders the `StripeCheckout` component and export it
+
+  ```js
+  class Payments extends Component {
+    render() {
+      debugger;
+      return (
+        <StripeCheckout
+          name="Emaily"
+          description="$5 for 5 emails credits"
+          amount={500}
+          token={(token) => console.log(token)}
+          stripeKey={process.env.REACT_APP_STRIPE_KEY}
+        />
+      );
+    }
+  }
+
+  export default Payments;
+  ```
+
+  - `name`: Is the title that will show the modal
+  - `description`: Is a little description that will appear below the title to give a little context to the user of what is paying
+  - `amount`: By default is on `US dollars` and the number that you put in there should be on `cents` so `500 cents` are `5 dollars`. For this example, we gonna stick with `dollars`
+  - `token`: Receive a `callback` function that will run when we receive the `token` that the `stripe` API send us after the user fills the credit card information and submit it. For now, we just gonna log the `token` that we receive
+  - `stripeKey`: The key that we previously get from the `stripe` dashboard
+
+- Now go to the `Header` component
+- Go to the `renderContent` function and update the `default` case(That means that the user is logged in)
+
+  ```js
+  renderContent() {
+    switch (this.props.auth) {
+      case null:
+        return;
+      case false:
+        return (
+          <li>
+            <a href="/auth/google">Login With Google</a>
+          </li>
+        );
+      default:
+        return [
+          <li key="1">
+            <Payments />
+          </li>,
+          <li key="2">
+            <a href="/api/logout">Logout</a>
+          </li>,
+        ];
+    }
+  }
+  ```
+
+- Now run your servers
+- Log in
+- You should have a button called `Pay with card`
+- Click the button
+- You should see a modal that you will use to send your credit card info to `stripe`
+- Put a random `email` on the first input
+- Add this number on the `credit card` input; `4242 4242 4242 4242`(Press `42` until the input is fill)
+- Put an `expiration date` on the future
+- Put a random `cvv` number
+- Open your inspector
+- Click on the `submit` button
+- Check on your browser console the `token` that we receive from `stripe`(more on that object in the `notes` of this title)
+- Now go back to the `Payments` component file
+- Now add the closing tag so the `StripeCheckout` receive a child and send a button with a `className` call `btn`
+
+  ```js
+  <StripeCheckout
+    name="Emaily"
+    description="$5 for 5 emails credits"
+    amount={500}
+    token={(token) => console.log(token)}
+    stripeKey={process.env.REACT_APP_STRIPE_KEY}
+  >
+    <button className="btn">Add Credits</button>
+  </StripeCheckout>
+  ```
+
+  This will use a class of `materialize-css` to style the button and change the default style and text of the button
+
+#### Notes:
+
+- Instead of a `token` we actually receive an object that represents the pending charge. The closer as a `token` that we have on that object is the `id` that we gonna use it on the follow-up request that we gonna do on our API
+- We also have `client_ip` that can be used for some security libraries that will help us to reduce fraud(we don't gonna use it on the example)
+- `created` is the `timestamp` where it was created
+- `email` is the `email` that we send on the form
+- `livemode` should be `false` because we are on `test` mode
+- `type` is the type of payment in this case `card` because we use a credit card
+- `card` object that has some information on the credit card that you just submitted
