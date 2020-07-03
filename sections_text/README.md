@@ -1848,6 +1848,23 @@ Now we need to create the `endpoint` that will use the `token` to complete the b
 - Now we need to install a `stripe` module for our backend that will help us to take the token that we got on the frontend and exchange it back to an actual charge of the user credit card. On your terminal go to the `server` directory and use the following command:
   `npm install stripe --save`
 
+- Now at the top of the `billingRoutes.js` require the keys file
+  `const keys = require("../config/keys");`
+
+- Then require the `stripe` module sending the secret `stripe` key that we use before
+  `const stripe = require("stripe")(keys.stripeSecretKey);`
+
+- Now we need to resolve an issue before working with the `endpoint`. We made a `post` request to our backend containing all the information about the credit card but when you do a `post` request to an `express` server; `express` does not automatically parse the content of the `payload` of that request so we need to install a module that every time `express` receive a `post` request it should take the request `body` parse it and make it available to our application. For this, we gonna use the [body-parser](https://www.npmjs.com/package/body-parser) module.
+
+On your terminal go to the server directory and install `body-parser`
+`npm install --save body-parser`
+
+- Now on your editor go to the `index.js` file in the server directory and require the `body-parse` module
+  `const bodyParser = require("body-parser");`
+
+- Now add the `body-parser` module as a `middleware`
+  `app.use(bodyParser.json());`
+
 #### Notes
 
 - [Here](https://stripe.com/docs/api) you can see the `stripe` module documentation
