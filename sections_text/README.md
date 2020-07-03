@@ -1828,3 +1828,29 @@ Now we follow the next process:
   ```
 
 - Now test on your browser. You will receive a `404` error after you submit the example credit card information but that is expected since we don't create the `/api/stripe` yet
+
+### Completing the stripe process on the backend
+
+Now we need to create the `endpoint` that will use the `token` to complete the billing process.
+
+- Go to the `server/routes` directory and create a file call `billingRoutes.js`
+- Export a function that uses `app` as a parameter and handle a `post` for the `/api/stripe` endpoint
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/stripe", (req, res) => {});
+  };
+  ```
+
+- Go to the `index.js` file and bellow the `require` statment of the `authRoutes` add the following
+  `require("./routes/billingRoutes")(app);`
+
+- Now we need to install a `stripe` module for our backend that will help us to take the token that we got on the frontend and exchange it back to an actual charge of the user credit card. On your terminal go to the `server` directory and use the following command:
+  `npm install stripe --save`
+
+#### Notes
+
+- [Here](https://stripe.com/docs/api) you can see the `stripe` module documentation
+- In our case we wanna use the `stripe` module to create a [charge object](https://stripe.com/docs/api/charges/object); that object is returned to us by the `stripe` API.
+- To get the `charge object` we need to [create a charge](https://stripe.com/docs/api/charges/create)
+- One of the required properties on the configuration object is the `source` property that means what `credit card` or source of payment we are using; that will have the `token` that we get from the `checkout` library
