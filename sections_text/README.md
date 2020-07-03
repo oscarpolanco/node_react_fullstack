@@ -1865,6 +1865,26 @@ On your terminal go to the server directory and install `body-parser`
 - Now add the `body-parser` module as a `middleware`
   `app.use(bodyParser.json());`
 
+  Now all the payload that you send to the `express` server will be available on `req.body` on our `route handler`.
+
+- Now we need to use `stripe` to create the charge. On your editor go to the `billingRoutes` file and add the following code in the previous define `route handler`
+
+  ```js
+  app.post("/api/stripe", (req, res) => {
+    stripe.charges.create({
+      amount: 500,
+      currency: "usd",
+      description: "$5 for 5 credits",
+      source: req.body.id,
+    });
+  });
+  ```
+
+  - The `amount` property is the value on cents that we will charge and should be the same that we previosly define on the client side.
+  - The `currency` property define the type of that currency; should be the same as the previous define on our client side of our application
+  - the `description` property define a message of the charge
+  - the `source` property specify what credit card or charge source that we wanna build and should be the `id` property that we get from the client side.
+
 #### Notes
 
 - [Here](https://stripe.com/docs/api) you can see the `stripe` module documentation
