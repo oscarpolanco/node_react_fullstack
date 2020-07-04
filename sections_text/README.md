@@ -1934,7 +1934,7 @@ Now we need to convert that charge that we did to the user `credit card` or sour
 
 - Now restart your server and do the billing process from the client.
 
-- On the browser console in the network section; you should see the `stripe` request with the `user model` on it response.
+- On the browser console in the network section; you should see the `stripe` request with the `user model` on its response.
 
 #### Notes
 
@@ -1952,4 +1952,64 @@ if (!req.user) {
 }
 ```
 
-This means that every time that the user doesn't exist on the request we gonna respond with unauthorize status and a error message.
+This means that every time that the user doesn't exist on the request we gonna respond with unauthorize status and an error message.
+
+This logic will be enough for our `route handler` but on this project, we will have some more `routes` that will need that logic and that will create a painful process of add this condition on each `route` that we need so we will need something that can help us with this and that is a little feature of the `express` world that we already see before call `middleware`. We can add some number of `middleware` that the request will past and they will be made some change to it but oppose as before we don't want that all the request past throw ur new `middleware` just some particulate `routes`. For this, we gonna follow these steps
+
+- First, on the `server` directory we create a folder called `middleware` that will centralize all the `middleware` that we gonna create.
+- Inside of the `middleware` directory create a file called `requireLogin.js`
+- Inside of the new file export a function that receives 3 parameters: `req`; `res`; `next`
+  `module.exports = (req, res, next) => {};`
+
+  - `req`: The incoming request
+  - `res`: response object
+  - `next`: Is a function that is called when our `middleware` is complete and will pass the request to the next `middleware` on the change or to the correspondent route
+
+- Now we add the condition that will help us to know is there is a `user`
+
+  ```js
+  module.exports = (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).send({ error: "You must log in!" });
+    }
+  };
+  ```
+
+  We don't add the `next` function on the condition because we don't want that the request continues if we got some error.
+
+- If there is a `user` on the request we add the `next` function to continue
+
+  ```js
+  module.exports = (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).send({ error: "You must log in!" });
+    }
+
+    next();
+  };
+  ```
+
+- At this moment; we need to add our new `middleware` to our particular `route`. Go to the `billingRoutes.js` file and export our new `middleware`
+  `const requireLogin = require("../middlewares/requireLogin");`
+
+- Finally, we need to add it to our `route handler`. After the `/api/stripe` you can put the name that you just export and delete the condition block that we add before.
+
+  ```js
+  app.post("/api/stripe", requireLogin, async (req, res) => {
+    const charge = await stripe.charges.create({
+      amount: 500,
+      currency: "usd",
+      description: "$5 for 5 credits",
+      source: req.body.id,
+    });
+
+    req.user.credits += 5;
+    const user = await req.user.save();
+
+    res.send(user);
+  });
+  ```
+
+  Is worth to notice that we do not invoke the `middleware` function just add a reference to that function; with this, we tell `express` that do not call the function the very first time that load the code instead we need that every time it gets a `post` request to that particular `route` here is the reference to a function to run.
+
+  Also, the request functions take an arbitrary number of parameters so you can add as much `middleware` as you want with the condition that one of the parameters eventually needs to process the request and send a response back to the user.
