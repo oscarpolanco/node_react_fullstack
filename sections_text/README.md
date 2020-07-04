@@ -1885,9 +1885,53 @@ On your terminal go to the server directory and install `body-parser`
   - the `description` property define a message of the charge
   - the `source` property specify what credit card or charge source that we wanna build and should be the `id` property that we get from the client side.
 
+- Finally need to add the `async` keyword since the `create` function is asynchronous
+
+  ```js
+  app.post("/api/stripe", async (req, res) => {
+    const charge = await stripe.charges.create({
+      amount: 500,
+      currency: "usd",
+      description: "$5 for 5 credits",
+      source: req.body.id,
+    });
+
+    console.log(charge);
+  });
+  ```
+
+- Now do the charging process from the client and check the terminal; you should receive an object that represents the charge.
+
 #### Notes
 
 - [Here](https://stripe.com/docs/api) you can see the `stripe` module documentation
 - In our case we wanna use the `stripe` module to create a [charge object](https://stripe.com/docs/api/charges/object); that object is returned to us by the `stripe` API.
 - To get the `charge object` we need to [create a charge](https://stripe.com/docs/api/charges/create)
-- One of the required properties on the configuration object is the `source` property that means what `credit card` or source of payment we are using; that will have the `token` that we get from the `checkout` library
+- One of the required properties on the configuration object is the `source` property that means what `credit card` or source of payment we are using; that will have the `token` that we get from the `checkout` library.
+- On the `stripe` documentation you will see that they send a callback function as a second parameter but we actually don't need to send that callback function; as we see on the `stripe` npm documentation we can use promises to handle the result that is why we use the `async/await` keyword.
+
+### Adding credits to a User
+
+Now we need to convert that charge that we did to the user `credit card` or source of payment to a `credits` of our application. To do this we gonna add a new property to our `user` model class that represents the `credits` and by default have a value of `0`.
+
+- Now first on your editor go to the `User.js` file on the `models` directory and add a `credits` property to our `schema` send an object as its value that will have the `type` and the `default` value.
+
+  ```js
+  const userSchema = new Schema({
+    googleId: String,
+    credits: { type: Number, default: 0 },
+  });
+  ```
+
+- Now on the `billingRoutes` file; we need to get a reference to the current user model; in other words the user that made the request. As you remember that when we use `passport` and a `user` log in to our application we can access our current user model using `req.user`. With the current `user` model we can add the `5 credits` to the `user`.
+  `req.user.credits += 5;`
+
+- Now we need to add that change to our database so the information persists
+  `const user = await req.user.save();`
+
+- Finally we `response` with the new updated user
+  `res.send(user);`
+
+#### Notes
+
+- By convention, after we `save` the information of the database, we use the result of that function instead of the `req.user` to have the most possible update model on that point of time.
