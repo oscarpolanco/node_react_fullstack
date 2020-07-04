@@ -2013,3 +2013,26 @@ This logic will be enough for our `route handler` but on this project, we will h
   Is worth to notice that we do not invoke the `middleware` function just add a reference to that function; with this, we tell `express` that do not call the function the very first time that load the code instead we need that every time it gets a `post` request to that particular `route` here is the reference to a function to run.
 
   Also, the request functions take an arbitrary number of parameters so you can add as much `middleware` as you want with the condition that one of the parameters eventually needs to process the request and send a response back to the user.
+
+### Displaying the credits on the client
+
+We already work almost all the things that we need to display the `credits` on the client-side of our application because we already have the user model available so we just need to call to display it.
+
+On the `client/src` directory go to the `Header` component; specifically to the `renderContent` function an add the new `li` calling the `credits` property of the `auth` prop as it content after the `payment` element.
+
+```js
+default:
+  return [
+    <li key="1">
+      <Payments />
+    </li>,
+    <li key="3" style={{ margin: "0 10px" }}>
+      Credits: {this.props.auth.credits}
+    </li>,
+    <li key="2">
+      <a href="/api/logout">Logout</a>
+    </li>,
+  ];
+```
+
+Since we use the global state of our application each time the user makes a new charge and adds some credits the header will automatically update.
