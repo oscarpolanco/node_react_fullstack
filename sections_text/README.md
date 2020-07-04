@@ -1583,3 +1583,456 @@ To handle all the navigation inside of our application we gonna use the `Link` t
   ```
 
 - Now test on the browser if the logo redirects to the correct page on `logged in` and `logout`
+
+## Section 8: Handling Payments
+
+In this section we will begin the process of charge for the `surveys` that a user is gonna create. So we will have and `Add credit card` button that will show a form on which we will submit our credit card information to gain a`credit` (1 dollar is 1 `credit`) that mean for each credit that you have you will have access to create a `survey` and send a bunch of emails that you need.
+
+### Rules of Billing
+
+Why we take this approach well here are some considerations on it:
+
+#### We are bad at security
+
+We got a deploy to `Heroku` but we don't spend second thinking on security maybe all is secure out of the box but the fact that we don't think on it is the proof that we don't always are thinking on security for this reason we have some tips to go around it.
+
+- Never accept raw credit cards numbers (More on this later)
+
+- Never store credit card numbers; for this we gonna use a third party API that will have all the billing infrastructure and all the web security around it.
+
+- Always use an outside payment processor; on this project we gonna use [stripe](https://stripe.com/) that make take care of all the payment processes and the security around it.
+
+#### Billing is hard
+
+Even with a third party company that handles all this process that spends millions to make this process as easy as possible for us it will continue to be a hard process that requires a lot of thought.
+
+- Possible to avoid monthly payment / multiple plans ?; Add complexity to all the process, for example, let's imagine that we set 2 plans; one with 10 surveys and the other with 50 surveys; a user buy the first one use 5 surveys but decided that he want the other now the user use the half of the surveys so how exactly we are gonna charge it. This means a more complex logic to get around all this type of situation.
+
+- Fraud and chargeback are a pain; Accepting credit cards to your applications eventually you will have that at least one of your users send a fraudulent credit card or when a user get the built they decide that they actually don't want to pay for the service for some reason and will add more complexity to the process.
+
+### Stripe billing process
+
+- The user clicks on a button that we gonna add that reads `Add Credits`
+- Then we tell `stripe` to generate a credit card form and show it to our user. When we are working with `stripe` we traditionally install a plugin author by `stripe` into our `React` application so everything we need to do the billing process we tell that plugin to generate and show the form that our users will use.
+- When the user got the form it will enter the credit card detail
+- Then all the information of the form will be taken by the `stripe` plugin and will send it to the `stripe` API
+- After that `stripe` will send a `token` that will represent the pending charge. This will represent the authorization step that `stripe` have this mean that will allow your app to charge the user
+- We take that `token` and send it to our API
+- Our API will send a follow-up request with the `token` to the `stripe` API and confirm the charge was successful. This means that we put the charge that we need and send it with the `token` to complete the process
+- And finally, we gonna add some `credits` to our user's account
+
+### Adding the Stripe dependency
+
+#### Create a stripe account
+
+First, we need to create an account on the [stripe page](https://stripe.com/):
+
+- Click on the `start now` button on the front page
+- Fill the information of the form
+- Click on the `create account` button
+- For this example, you can `verify` your account but doesn't activate your account because you will need to fill a lot of information for production porpuses but for this example, we don't need it
+- Your account will automatically view `test data`; this means that your account is on `test mode` and you will have the opportunity to send `test` data
+
+#### Adding the checkout library and its configuration
+
+After you got the account we need to install a module created by `stripe` that will be on charge of generating the form that the user will see and communicate with the `stripe` API but we are using `react-stripe-checkout` instead of the `checkout.js` because the second one assumes that you are using libraries such as `jQuery` or `Angular` and don't work out of the box with `React`
+
+- Now on your terminal go to the `client` directory
+- Install `react-stripe-checkout` using: `npm install --save react-stripe-checkout`
+- Now we need to add the `keys` that we need on the project; first on the `server/config` directory go to the `dev.js` file and add the follwing:
+
+```js
+stripePublishableKey: "pk_test_my_public_key",
+stripeSecretKey: "sk_test_my_secret_key"
+```
+
+To get those keys; go to your `stripe` dashboard and on the `API` section. Be careful with the `secret` because we don't want to share it with the public also be careful with the names on the config files because if we got a typo will see the error after we finish with the frontend of our application.
+
+- Now got to the `prod.js` file in the `server/config` directory and add the following:
+
+```js
+stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+stripeSecretKey: process.env.STRIPE_SECRET_KEY
+```
+
+- Now go to the `Heroku` dashboard on the `setting` options
+- On the `config vars` sections click on `Reveal config vars`
+- Add the `STRIPE_PUBLISHABLE_KEY` and the `STRIPE_SECRET_KEY` with it values
+- Now we need to add the `keys` on the `client` actually just the `public key`. On your editor go to the `client` directory
+- Create a file called `.env.development` and add the following:
+  `REACT_APP_STRIPE_KEY=pk_test_my_public_key`
+- Now on the same directory create a file call `.env.production` and add the following:
+  `REACT_APP_STRIPE_KEY=pk_test_my_public_key`
+- Now run on your `index.js` file on the `client` directory log the key calling it like this:
+  `process.env.REACT_APP_STRIPE_KEY`
+- Run your `servers` again
+- You should see the `key` on the console of your browser
+- For this project we gonna `ignore` both `.env` file son on the `.gitignore` add both files
+
+##### Notes:
+
+- On the frontend of our application, we are using `Es6` modules and the backend are using common js modules to require files so this means on our backend we can have some amount of logic before the `require` statement(Like our `key.js` file) but on `Es6` does not allow any type of logic before an `import` statement that is one of the reasons that we don't use the same config file on the `client`.
+- If we `import` the config file in our `client`; when we compile our project all the content of the file will be available to the public; that is another reason that we don't use our config file of the `server`.
+- When you are setting an `environment variable` using `create_react_app` you need to add the `REACT_APP` as a prefix on your `environment variable` name.
+
+### Payment component
+
+Now that we got all the configuration that we need; we can use the `checkout` library. Now by default when you render the `stripe` module as a component it will render a button that the user can click and when is clicked the form will appear on the screen so we gonna first create a component that uses the `stripe` module and use it on the `header`.
+
+- First, on your editor go to the `client/component` directory
+- Create a file called `Payments.js`
+- Import `React` and the `stripe checkout` modules
+
+  ```js
+  import React, { Component } from "react";
+  import StripeCheckout from "react-stripe-checkout";
+  ```
+
+- Now create a class component that renders the `StripeCheckout` component and export it
+
+  ```js
+  class Payments extends Component {
+    render() {
+      debugger;
+      return (
+        <StripeCheckout
+          name="Emaily"
+          description="$5 for 5 emails credits"
+          amount={500}
+          token={(token) => console.log(token)}
+          stripeKey={process.env.REACT_APP_STRIPE_KEY}
+        />
+      );
+    }
+  }
+
+  export default Payments;
+  ```
+
+  - `name`: Is the title that will show the modal
+  - `description`: Is a little description that will appear below the title to give a little context to the user of what is paying
+  - `amount`: By default is on `US dollars` and the number that you put in there should be on `cents` so `500 cents` are `5 dollars`. For this example, we gonna stick with `dollars`
+  - `token`: Receive a `callback` function that will run when we receive the `token` that the `stripe` API send us after the user fills the credit card information and submit it. For now, we just gonna log the `token` that we receive
+  - `stripeKey`: The key that we previously get from the `stripe` dashboard
+
+- Now go to the `Header` component
+- Go to the `renderContent` function and update the `default` case(That means that the user is logged in)
+
+  ```js
+  renderContent() {
+    switch (this.props.auth) {
+      case null:
+        return;
+      case false:
+        return (
+          <li>
+            <a href="/auth/google">Login With Google</a>
+          </li>
+        );
+      default:
+        return [
+          <li key="1">
+            <Payments />
+          </li>,
+          <li key="2">
+            <a href="/api/logout">Logout</a>
+          </li>,
+        ];
+    }
+  }
+  ```
+
+- Now run your servers
+- Log in
+- You should have a button called `Pay with card`
+- Click the button
+- You should see a modal that you will use to send your credit card info to `stripe`
+- Put a random `email` on the first input
+- Add this number on the `credit card` input; `4242 4242 4242 4242`(Press `42` until the input is fill)
+- Put an `expiration date` on the future
+- Put a random `cvv` number
+- Open your inspector
+- Click on the `submit` button
+- Check on your browser console the `token` that we receive from `stripe`(more on that object in the `notes` of this title)
+- Now go back to the `Payments` component file
+- Now add the closing tag so the `StripeCheckout` receive a child and send a button with a `className` call `btn`
+
+  ```js
+  <StripeCheckout
+    name="Emaily"
+    description="$5 for 5 emails credits"
+    amount={500}
+    token={(token) => console.log(token)}
+    stripeKey={process.env.REACT_APP_STRIPE_KEY}
+  >
+    <button className="btn">Add Credits</button>
+  </StripeCheckout>
+  ```
+
+  This will use a class of `materialize-css` to style the button and change the default style and text of the button
+
+#### Notes:
+
+- Instead of a `token` we actually receive an object that represents the pending charge. The closer as a `token` that we have on that object is the `id` that we gonna use it on the follow-up request that we gonna do on our API
+- We also have `client_ip` that can be used for some security libraries that will help us to reduce fraud(we don't gonna use it on the example)
+- `created` is the `timestamp` where it was created
+- `email` is the `email` that we send on the form
+- `livemode` should be `false` because we are on `test` mode
+- `type` is the type of payment in this case `card` because we use a credit card
+- `card` object that has some information on the credit card that you just submitted
+
+### Reusing Action type
+
+Now that we receive a `token` from the `stripe` API we need to then send that to our API to do a follow-up request to complete the transaction and add the `credits` to our user. For this purpose, we gonna add a new field on the `user` model that we already have that contain the amount of `credits` that the user has this will allow users to use the same state that we already have and reuse some of the `action` logic that we already build for the authentication flow because each time we update the user model we will need to refresh the user information like we did when the user logs in.
+
+Now we follow the next process:
+
+- On your editor go to the `client/actions` directory
+- On the index file add the following code:
+
+  ```js
+  export const handleToken = (token) => async (dispatch) => {
+    const res = await axios.post("/api/stripe", token);
+
+    dispatch({
+      type: FETCH_USERS,
+      payload: res.data,
+    });
+  };
+  ```
+
+  Since we are using and updating the user model to add the `credits` after the payment we can use the same `action type` of fetching the user and since we are using a `post` function we gonna receive a response that will contain the user information that we gonna use on the payload. The `endpoint` that we use is not yet created on our API.
+
+- Now we need to go to the `Payment` component to use the `action`
+- Import the `connect` function and the `actions`
+
+  ```js
+  import { connect } from "react-redux";
+  import * as actions from "../actions";
+  ```
+
+- On the `export` statement use the connect function to make available the `actions` on the component
+  `export default connect(null, actions)(Payments);`
+- Now go to the `token` prop that the `StripeCheckout` receive and update the `callback` function to use the `action`
+
+  ```js
+  <StripeCheckout
+    name="Emaily"
+    description="$5 for 5 emails credits"
+    amount={500}
+    token={(token) => this.props.handleToken(token)}
+    stripeKey={process.env.REACT_APP_STRIPE_KEY}
+  >
+    <button className="btn">Add Credits</button>
+  </StripeCheckout>
+  ```
+
+- Now test on your browser. You will receive a `404` error after you submit the example credit card information but that is expected since we don't create the `/api/stripe` yet
+
+### Completing the stripe process on the backend
+
+Now we need to create the `endpoint` that will use the `token` to complete the billing process.
+
+- Go to the `server/routes` directory and create a file call `billingRoutes.js`
+- Export a function that uses `app` as a parameter and handle a `post` for the `/api/stripe` endpoint
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/stripe", (req, res) => {});
+  };
+  ```
+
+- Go to the `index.js` file and bellow the `require` statment of the `authRoutes` add the following
+  `require("./routes/billingRoutes")(app);`
+
+- Now we need to install a `stripe` module for our backend that will help us to take the token that we got on the frontend and exchange it back to an actual charge of the user credit card. On your terminal go to the `server` directory and use the following command:
+  `npm install stripe --save`
+
+- Now at the top of the `billingRoutes.js` require the keys file
+  `const keys = require("../config/keys");`
+
+- Then require the `stripe` module sending the secret `stripe` key that we use before
+  `const stripe = require("stripe")(keys.stripeSecretKey);`
+
+- Now we need to resolve an issue before working with the `endpoint`. We made a `post` request to our backend containing all the information about the credit card but when you do a `post` request to an `express` server; `express` does not automatically parse the content of the `payload` of that request so we need to install a module that every time `express` receive a `post` request it should take the request `body` parse it and make it available to our application. For this, we gonna use the [body-parser](https://www.npmjs.com/package/body-parser) module.
+
+On your terminal go to the server directory and install `body-parser`
+`npm install --save body-parser`
+
+- Now on your editor go to the `index.js` file in the server directory and require the `body-parse` module
+  `const bodyParser = require("body-parser");`
+
+- Now add the `body-parser` module as a `middleware`
+  `app.use(bodyParser.json());`
+
+  Now all the payload that you send to the `express` server will be available on `req.body` on our `route handler`.
+
+- Now we need to use `stripe` to create the charge. On your editor go to the `billingRoutes` file and add the following code in the previous define `route handler`
+
+  ```js
+  app.post("/api/stripe", (req, res) => {
+    stripe.charges.create({
+      amount: 500,
+      currency: "usd",
+      description: "$5 for 5 credits",
+      source: req.body.id,
+    });
+  });
+  ```
+
+  - The `amount` property is the value on cents that we will charge and should be the same that we previosly define on the client side.
+  - The `currency` property define the type of that currency; should be the same as the previous define on our client side of our application
+  - the `description` property define a message of the charge
+  - the `source` property specify what credit card or charge source that we wanna build and should be the `id` property that we get from the client side.
+
+- Finally need to add the `async` keyword since the `create` function is asynchronous
+
+  ```js
+  app.post("/api/stripe", async (req, res) => {
+    const charge = await stripe.charges.create({
+      amount: 500,
+      currency: "usd",
+      description: "$5 for 5 credits",
+      source: req.body.id,
+    });
+
+    console.log(charge);
+  });
+  ```
+
+- Now do the charging process from the client and check the terminal; you should receive an object that represents the charge.
+
+#### Notes
+
+- [Here](https://stripe.com/docs/api) you can see the `stripe` module documentation
+- In our case we wanna use the `stripe` module to create a [charge object](https://stripe.com/docs/api/charges/object); that object is returned to us by the `stripe` API.
+- To get the `charge object` we need to [create a charge](https://stripe.com/docs/api/charges/create)
+- One of the required properties on the configuration object is the `source` property that means what `credit card` or source of payment we are using; that will have the `token` that we get from the `checkout` library.
+- On the `stripe` documentation you will see that they send a callback function as a second parameter but we actually don't need to send that callback function; as we see on the `stripe` npm documentation we can use promises to handle the result that is why we use the `async/await` keyword.
+
+### Adding credits to a User
+
+Now we need to convert that charge that we did to the user `credit card` or source of payment to a `credits` of our application. To do this we gonna add a new property to our `user` model class that represents the `credits` and by default have a value of `0`.
+
+- Now first on your editor go to the `User.js` file on the `models` directory and add a `credits` property to our `schema` send an object as its value that will have the `type` and the `default` value.
+
+  ```js
+  const userSchema = new Schema({
+    googleId: String,
+    credits: { type: Number, default: 0 },
+  });
+  ```
+
+- Now on the `billingRoutes` file; we need to get a reference to the current user model; in other words the user that made the request. As you remember that when we use `passport` and a `user` log in to our application we can access our current user model using `req.user`. With the current `user` model we can add the `5 credits` to the `user`.
+  `req.user.credits += 5;`
+
+- Now we need to add that change to our database so the information persists.
+  `const user = await req.user.save();`
+
+- Finally we `response` with the new updated user
+  `res.send(user);`
+
+- Now restart your server and do the billing process from the client.
+
+- On the browser console in the network section; you should see the `stripe` request with the `user model` on its response.
+
+#### Notes
+
+- By convention, after we `save` the information of the database, we use the result of that function instead of the `req.user` to have the most possible update model on that point of time.
+
+### Requiring authentication
+
+We have a `route handler` that will add the `credits` when the user is a charge but as you see in the code we depend on `req.user` to complete the process; this means that the user must be logged in. If we try to access that `route handler` when we are not logged in the server will return an error so we need to handle this issue.
+
+On your editor go to the `billingRoutes` file and add the following conditional block
+
+```js
+if (!req.user) {
+  return res.status(401).send({ error: "You must log in!" });
+}
+```
+
+This means that every time that the user doesn't exist on the request we gonna respond with unauthorize status and an error message.
+
+This logic will be enough for our `route handler` but on this project, we will have some more `routes` that will need that logic and that will create a painful process of add this condition on each `route` that we need so we will need something that can help us with this and that is a little feature of the `express` world that we already see before call `middleware`. We can add some number of `middleware` that the request will past and they will be made some change to it but oppose as before we don't want that all the request past throw ur new `middleware` just some particulate `routes`. For this, we gonna follow these steps
+
+- First, on the `server` directory we create a folder called `middleware` that will centralize all the `middleware` that we gonna create.
+- Inside of the `middleware` directory create a file called `requireLogin.js`
+- Inside of the new file export a function that receives 3 parameters: `req`; `res`; `next`
+  `module.exports = (req, res, next) => {};`
+
+  - `req`: The incoming request
+  - `res`: response object
+  - `next`: Is a function that is called when our `middleware` is complete and will pass the request to the next `middleware` on the change or to the correspondent route
+
+- Now we add the condition that will help us to know is there is a `user`
+
+  ```js
+  module.exports = (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).send({ error: "You must log in!" });
+    }
+  };
+  ```
+
+  We don't add the `next` function on the condition because we don't want that the request continues if we got some error.
+
+- If there is a `user` on the request we add the `next` function to continue
+
+  ```js
+  module.exports = (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).send({ error: "You must log in!" });
+    }
+
+    next();
+  };
+  ```
+
+- At this moment; we need to add our new `middleware` to our particular `route`. Go to the `billingRoutes.js` file and export our new `middleware`
+  `const requireLogin = require("../middlewares/requireLogin");`
+
+- Finally, we need to add it to our `route handler`. After the `/api/stripe` you can put the name that you just export and delete the condition block that we add before.
+
+  ```js
+  app.post("/api/stripe", requireLogin, async (req, res) => {
+    const charge = await stripe.charges.create({
+      amount: 500,
+      currency: "usd",
+      description: "$5 for 5 credits",
+      source: req.body.id,
+    });
+
+    req.user.credits += 5;
+    const user = await req.user.save();
+
+    res.send(user);
+  });
+  ```
+
+  Is worth to notice that we do not invoke the `middleware` function just add a reference to that function; with this, we tell `express` that do not call the function the very first time that load the code instead we need that every time it gets a `post` request to that particular `route` here is the reference to a function to run.
+
+  Also, the request functions take an arbitrary number of parameters so you can add as much `middleware` as you want with the condition that one of the parameters eventually needs to process the request and send a response back to the user.
+
+### Displaying the credits on the client
+
+We already work almost all the things that we need to display the `credits` on the client-side of our application because we already have the user model available so we just need to call to display it.
+
+On the `client/src` directory go to the `Header` component; specifically to the `renderContent` function an add the new `li` calling the `credits` property of the `auth` prop as it content after the `payment` element.
+
+```js
+default:
+  return [
+    <li key="1">
+      <Payments />
+    </li>,
+    <li key="3" style={{ margin: "0 10px" }}>
+      Credits: {this.props.auth.credits}
+    </li>,
+    <li key="2">
+      <a href="/api/logout">Logout</a>
+    </li>,
+  ];
+```
+
+Since we use the global state of our application each time the user makes a new charge and adds some credits the header will automatically update.
