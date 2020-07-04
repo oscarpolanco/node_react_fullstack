@@ -1926,12 +1926,30 @@ Now we need to convert that charge that we did to the user `credit card` or sour
 - Now on the `billingRoutes` file; we need to get a reference to the current user model; in other words the user that made the request. As you remember that when we use `passport` and a `user` log in to our application we can access our current user model using `req.user`. With the current `user` model we can add the `5 credits` to the `user`.
   `req.user.credits += 5;`
 
-- Now we need to add that change to our database so the information persists
+- Now we need to add that change to our database so the information persists.
   `const user = await req.user.save();`
 
 - Finally we `response` with the new updated user
   `res.send(user);`
 
+- Now restart your server and do the billing process from the client.
+
+- On the browser console in the network section; you should see the `stripe` request with the `user model` on it response.
+
 #### Notes
 
 - By convention, after we `save` the information of the database, we use the result of that function instead of the `req.user` to have the most possible update model on that point of time.
+
+### Requiring authentication
+
+We have a `route handler` that will add the `credits` when the user is a charge but as you see in the code we depend on `req.user` to complete the process; this means that the user must be logged in. If we try to access that `route handler` when we are not logged in the server will return an error so we need to handle this issue.
+
+On your editor go to the `billingRoutes` file and add the following conditional block
+
+```js
+if (!req.user) {
+  return res.status(401).send({ error: "You must log in!" });
+}
+```
+
+This means that every time that the user doesn't exist on the request we gonna respond with unauthorize status and a error message.
