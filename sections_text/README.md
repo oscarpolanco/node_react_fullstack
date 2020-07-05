@@ -2036,3 +2036,61 @@ default:
 ```
 
 Since we use the global state of our application each time the user makes a new charge and adds some credits the header will automatically update.
+
+## Section 9: Back end to front end routing in production
+
+At this moment will be a good time to do deploy to production since we add a mayor architecture piece of our application with the `client` side. Previously we just made a deploy to production of our `express` server so we to take consideration some extra steps to preform the deploy; first, we need to remember how our application will work on development vs production.
+
+On development mode when a browser gets for example to `http://localhost:3000/`; the browser is essentially saying that need some stuff of our `react` side of our application at that moment the `create-react-app` server will handle this request and send everything that the browser needs but on production this work different because the `create-react-app` server doesn't exist this means that when the browser makes get to the `Heroku app` URL the `express` server somehow respond with all the relevant assets.
+
+For example, if the `express` server receives a `post` request to the `api/stripe` the server will understand that you are trying to send a `stripe` token and will process that request and respond but if the server receives a request to `/surveys` this is a `route` that we define on the `client` side of our application using `react-router` so we will have some `routes` handle by the `express` server and some other control by `react-router`. At this point, we need to make an assumption that every time the `express` server receives a request to a `route` that it does not know about it will probably control by `react-router` and it will return the `index.html` (created with the `create-react-app` build command) that inside of it have a `script` tag to load our `js bundle` (also created by the `create-react-app` build command) at that moment the browser will try to fetch the bundle file from the `express` server we need to instruct it again that if it doesn't recognize the `route` need to be forwarded to the correct file, in this case, the `main.js` bundle file at that moment the browser have access to the `index.html` file and the `js bundle` so this means that `react-router` that will see the current URL and decide to show the correct component in the example case `Dashboard`. With this example we now know that we will have 3 types of routes:
+
+- The ones that the `express` server know about it and can process it like `/api/stripe`
+- The ones that the `express` server doesn't know about it and return the `HTML` document like `/surveys`
+- The ones that the `express` server doesn't know about it and return the actual file rather than the `HTML` document like `client/build/static/js/main.js`
+
+### Routing in production
+
+Now we need to add the logic that will allow our `express` server to handle the `routes` that it can't process on production.
+
+- First, go to the `index.js` file at the root of the `server` directory
+
+- Now at the bottom of the file after the `billingRoutes` require statement add a condition asking is the `NODE_ENV` is on production
+  `if (process.env.NODE_ENV === "production") {}`
+
+  As we mentioned before the `NODE_ENV` environment variable is automatically set by `Heroku`
+
+- Inside of the condition block we gonna first serve up all the production assets like `main.js` and `maiin.css` files
+
+  ```js
+  if (process.env.NODE_ENV === "production") {
+    app.use(express.static("client/build"));
+  }
+  ```
+
+  This line means that is the server receive a `get` request for some file or route that the server doesn't understand what it looking for then look for the `client/build` directory and try to see if there is a file that matches up with what the request is looking for.
+
+- Now require a module called `path`
+
+  ```js
+  if (process.env.NODE_ENV === "production") {
+    app.use(express.static("client/build"));
+
+    const path = require("path");
+  }
+  ```
+
+- Finally, we need to serve the `index.html` is doesn't match with any route or file even in the `client/build` directory. For this, we need to create a `route handler` that response with the `index.html` file
+
+  ```js
+  if (process.env.NODE_ENV === "production") {
+    app.use(express.static("client/build"));
+
+    const path = require("path");
+    app.get("*", (req, res) => {
+      res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
+    });
+  }
+  ```
+
+  Is important to notice that we need to define the condition block like this because the order of operations is important so this last block will only run when `express` don't find on the `client/build` directory a file that needs to respond.
