@@ -2094,3 +2094,39 @@ Now we need to add the logic that will allow our `express` server to handle the 
   ```
 
   Is important to notice that we need to define the condition block like this because the order of operations is important so this last block will only run when `express` don't find on the `client/build` directory a file that needs to respond.
+
+### Adding in a Heroku build step
+
+We have a couple of options to do the build process for the production deploy like use a `CLI` but we gonna use `Heroku` since is the resource that we already set for the production environment and will be a little straight forward for us at the moment; the only downside is that we will need to install all the dev dependencies on the production to generate the `build` files and don't use it again.
+
+#### Steps that we going to follow using Heroku
+
+- We need to commit our files to `git`
+- We going to push those files to `Heroku`
+- When we push to `Heroku` it will automatically install all our server dependencies(This already happens on our previews deploys)
+- After `Heroku` install all the `server` dependencies it will run a script called `heroku-postbuild`
+- Inside on that script, we will tell `Heroku` that install all dependencies of our `client` side(including the `dev` dependencies)
+- Then tell `Heroku` that run the `npm run build` command on our `client` side to create the `build` directory
+- Then `Heroku` will continue to deploy our application as it did before
+
+#### Set the script to build the client
+
+First, [here](https://devcenter.heroku.com/articles/nodejs-support) is the `Heroku` documentation that will show you some options that you can add when you are using `Heroku` with `NodeJs` at this moment we gonna work with the [customizing the build process](https://devcenter.heroku.com/articles/nodejs-support#customizing-the-build-process).
+
+Now we need to be aware that we gonna use a more specific script for the build step instead of the standard [postinstall script](https://docs.npmjs.com/misc/scripts) script because of 2 things:
+
+- The `postinstall` script will run every time we install our dependencies
+- We need to run the script after install all the `client` dependencies after all the `server` dependencies are installed
+
+Also as we mentioned before we will need to install all the `dev` dependencies of our `client` side but by default `Heroku` ignore those dependencies so we will need to set an environment variable called `NPM_CONFIG_PRODUCTION` and set it to `false` but is important to set this environment variable for the `client` side.
+
+Finally, we will put this `heroku-postbuild` script on the `server package.json` because this is the file that `Heroku` will target automatically.
+
+In the `package.json` on the `server` directory on the `scripts` property add the following line
+`"heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"`
+
+- `NPM_CONFIG_PRODUCTION=false`: Will tell `Heroku` that install all dependencies include the `dev` dependencies
+- `npm install --prefix client`: Command to install all dependencies on the client-side
+- `&& npm run build --prefix client`: Afte the `install` command finish will run create the `build` directory that contains all our production assets
+
+Now you can commit your changes to `git` and make a `push` to `Heroku`. You should see that the `client` side is on your production server.
