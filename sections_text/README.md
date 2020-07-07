@@ -2130,3 +2130,55 @@ In the `package.json` on the `server` directory on the `scripts` property add th
 - `&& npm run build --prefix client`: Afte the `install` command finish will run create the `build` directory that contains all our production assets
 
 Now you can commit your changes to `git` and make a `push` to `Heroku`. You should see that the `client` side is on your production server.
+
+## Section 10: Mongoose for survey creation
+
+We are gonna continue with the next feature of our application that is the `survey` endpoint on our API in other words the ability of our user to create `surveys`, to send it out, and somehow receive feedback. Here is the flow of what is going to happen when the user creates a `survey`:
+
+- The user creates a `survey` with a simple `yes/no` question (when we solicitude feedback we gonna ask just a `yes/no` question; is simple for the example)
+- Then the `user` is going to send the `survey` to our backend API
+- After that our backend API are gonna take all that `survey` information (like the title; the people to send it to and the question to ask) and is going to create a template out of it
+- Then the `express` server is going to use 3rd party email provider to send a big email to all the people that should receive the `survey`
+- When the `users` receive an email with the `survey` will click `yes/no` to respond to the `survey`
+- Then the `email` provider will note the `user` respond
+- At that moment the `email` provider will send a note to our `express` server with the respond of the `user` in a particular `survey`
+- Finally, our `express` server is responsible to record the feedback in our `mongo` database
+
+### Survey routes
+
+- `GET /api/surveys`: When the user makes a request to this route will find all the `surveys` that the user-created and return back to them.
+
+- `POST /api/surveys`: Handle the case of the `users` that want to create a new `survey` and have it to automatically email out to everyone they want. When a `user` makes this request we spec that it send this 4 pieces of data:
+
+  - `title`: The title of the `survey` (name of the `survey` that the `user` will see on our application)
+  - `subject`: The subject line that will be shown on the `email`
+  - `body`: The text that will be shown on the `email`
+  - `recipients`: The comma-separated list of email addresses to send a survey to
+
+- `POST /api/surveys/webhooks`: Receive feedback from the `user` that receive an `email` and click the link on the `survey`.
+
+### Survey model
+
+The easiest part that we can begin in the `survey` process is the creation of the `survey` because the other 2 endpoints depends that a `survey` exist.
+
+So to begin we need to work with the database to store the `surveys`; this means that we need to create a `model` that will create the records that we need but is the word to notice that we need some kind of connection between the `survey` class and the `user` class so we can relate with `user` create the `survey`.
+
+Now on the `models` directory create a file call `survey.js` and add the following:
+
+- Require `mongoose`: `const mongoose = require("mongoose");`
+- Get the `schema` from `mongoose`: `const { Schema } = mongoose;`
+- Create a new `schema` with the propeties that we mention before that will represent our `survey`
+
+  ```js
+  const surveySchema = new Schema({
+    title: String,
+    body: String,
+    subject: String,
+    recipients: [String],
+  });
+  ```
+
+  Note that the `recipients` property will be an `array` of `strings` for the moment.
+
+- Finally add the new `model` to the database using `monogoose`: `mongoose.model("survey", surveySchema);`
+- Go to the `index.js` file on the root of the `server` directory and bellow the `user` model require statement; require the `survey` model: `require("./models/survey");`
