@@ -2163,7 +2163,7 @@ The easiest part that we can begin in the `survey` process is the creation of th
 
 So to begin we need to work with the database to store the `surveys`; this means that we need to create a `model` that will create the records that we need but is the word to notice that we need some kind of connection between the `survey` class and the `user` class so we can relate with `user` create the `survey`.
 
-Now on the `models` directory create a file call `survey.js` and add the following:
+Now on the `models` directory create a file call `Survey.js` and add the following:
 
 - Require `mongoose`: `const mongoose = require("mongoose");`
 - Get the `schema` from `mongoose`: `const { Schema } = mongoose;`
@@ -2181,4 +2181,23 @@ Now on the `models` directory create a file call `survey.js` and add the followi
   Note that the `recipients` property will be an `array` of `strings` for the moment.
 
 - Finally add the new `model` to the database using `monogoose`: `mongoose.model("survey", surveySchema);`
-- Go to the `index.js` file on the root of the `server` directory and bellow the `user` model require statement; require the `survey` model: `require("./models/survey");`
+- Go to the `index.js` file on the root of the `server` directory and bellow the `user` model require statement; require the `survey` model: `require("./models/Survey");`
+
+Looking at that `schema` that we just did we can say that we will have to deficiencies:
+
+- The first one is a simple one; where do we store our `feedback`?. At this moment we don't have any way to update the record when a given `user` press `yes/no` on a `survey` and we won't able to know how many `yes/no` have been press by the `users` that you send the `email`. For this we gonna add 2 properties with the respective name of the option; in this case `yes/no`; that will store the count of the click of the options.
+
+- Now imagine that a `user` press a lot of times one of the options; at this moment we don't have any record that tells us is a given `user` has already provided some amount of `feedback`; for this, we need to introduce some additional property that somehow record that some given `user` has summited some `feedback` but the issue on adding a new property is that we don't have much information of the `users` that receive the `surveys`; just the `recipients` have the list of the `emails` to send the `survey`. At this moment an `array` of `string` is not appropriate to store the information that we need so inside of our `recipients` properties we gonna embed a `subdocument collection` that will have a couple of little `models` call `recipients` with 2 properties; one call `email`(is the `email` of a given `user`) and the other call `clicked`(a `boolean` flag that represent that a given `user` click an option).
+
+Now we can add the options of the `survey` on the `schema`. Go to the `Survey.js` file on the `models` directory and add the following:
+
+```js
+const surveySchema = new Schema({
+  title: String,
+  body: String,
+  subject: String,
+  recipients: [String],
+  yes: { type: Number, default: 0 },
+  no: { type: Number, default: 0 },
+});
+```
