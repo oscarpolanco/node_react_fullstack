@@ -2201,3 +2201,38 @@ const surveySchema = new Schema({
   no: { type: Number, default: 0 },
 });
 ```
+
+### Limitations of the subdocuments collections
+
+As we mention before; at the instant that we create our `survey` model, we get a new `collection` on our `mongo` database that store a list of `surveys` and we refer to this as a `survey collection` so inside of the `survey collection` we got a bunch of different `instances/records` that represent a `survey` and we can store a variety of `records` inside of a `survey` that we call `subdocument collection`(in this case `recipients`). We use this `subdocument collections` when we want to make a very clear association between 2 given `records`(in our case a `recipient` will only belong to it parent `survey` and this `recipient` don't have any use for any other `survey`). Knowing this you may ask; why the `surveys` are not `subdocuments` of the `user`? And the reason is the physical limitations of `MongoDB`. In `MongoDB` we refer to each `record` inside of a `collection` as a `document` and we have limited sizes to each of them; that is `4mb` and we will limit the amount of `email` per `survey` to be less than the complete `4mb`.
+
+### Setting up subDocs
+
+Now we gonna add the `subdocument collection` to our `survey` collection.
+
+- Insde of the `models` directory create a file call `Recipient.js`
+- Inside of the `Recipient.js` file require `mongoose`: `const mongoose = require("mongoose");`
+- Then pull of the `Schema` object from `mongoose`: `const { Schema } = mongoose;`
+- Now create a `schema` for the `recipient` wit a property call `email` that is a `string` and a property call `responded` that is a `boolean` with a default of `false`
+
+  ```js
+  const recipientSchema = new Schema({
+    email: String,
+    responded: { type: Boolean, default: false },
+  });
+  ```
+
+- Now exports the `recipientSchema`: `module.exports = recipientSchema;`
+- Go to the `Survey.js` file and import the `recipientSchema`: `const RecipientSchema = require("./Recipient");`
+- Finally update the `recipient` property in the `surveySchema` adding a value of a list of `RecipientSchema`
+
+  ```js
+  const surveySchema = new Schema({
+    title: String,
+    body: String,
+    subject: String,
+    recipients: [RecipientSchema],
+    yes: { type: Number, default: 0 },
+    no: { type: Number, default: 0 },
+  });
+  ```
