@@ -2236,3 +2236,45 @@ Now we gonna add the `subdocument collection` to our `survey` collection.
     no: { type: Number, default: 0 },
   });
   ```
+
+### Relathionship fiels
+
+As we told before one user will have many `surveys` so we need to somehow identify which server belongs to which user so we need to add another property to make that relationship.
+
+On the `survey` schema add a `_user` property
+
+```js
+const surveySchema = new Schema({
+  title: String,
+  body: String,
+  subject: String,
+  recipients: [RecipientSchema],
+  yes: { type: Number, default: 0 },
+  no: { type: Number, default: 0 },
+  _user: { type: Schema.Types.ObjectId, ref: "User" },
+});
+```
+
+- `_user`: Reference to a particular `user`.
+- `type: Schema.Types.ObjectId`: This will contain the `id` of the user that owns this record.
+- `ref: "User"`: The reference that we do with the `id` belongs to the `user` collection.
+
+Not related to the topic we also add 2 properties of `Date` with the information on when the `survey` is sent and when the last time someone responds.
+
+```js
+const surveySchema = new Schema({
+  title: String,
+  body: String,
+  subject: String,
+  recipients: [RecipientSchema],
+  yes: { type: Number, default: 0 },
+  no: { type: Number, default: 0 },
+  _user: { type: Schema.Types.ObjectId, ref: "User" },
+  dateSent: Date,
+  lastResponded: Date,
+});
+```
+
+#### Note
+
+- The underscore before `_user` is not obligatory but by convention, we use this for relationship files.
