@@ -2281,7 +2281,7 @@ const surveySchema = new Schema({
 
 ### Create the survey route handler
 
-Now that we got our `survey` schema we can begin to work with the first of the `route hanlder` that will have all the `survey` logic that we need.
+Now that we got our `survey` schema we can begin to work with the first of the `route handler` that will have all the `survey` logic that we need.
 
 - First go to the `route` directory and create a file call `surveyRoutes.js`
 - Now export a function that recive a parameter call `app`
@@ -2308,3 +2308,30 @@ module.exports = (app) => {
   app.post("/api/surveys", requireLogin, (req, res) => {});
 };
 ```
+
+- Now we need to make sure that the `user` has the minimum number of credits to continue with the `route handler` logic. For this go to the `middleware` directory and create a file called `requireCredits`
+- Then export the following function that will have a condition that checks if the user has more than `0` credits and send a `403` status code if it doesn't have enough credits
+
+```js
+module.exports = (req, res, next) => {
+  if (req.credits < 1) {
+    return res.status(403).send({ error: "Not enough credits" });
+  }
+
+  next();
+};
+```
+
+Why `403` status code? Because is the one that represents at this moment what we need; there is a [403](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.3) payment required status but is not implemented yet as you see in the [W3.org](https://www.w3.org/) documentation.
+
+- With this you can add it on the `surveyRoutes` file. First require the new middleware
+  `const requireCredits = require("../middlewares/requireCredits");`
+- Add the `requireCredits` middleware on the `route handler`
+
+```js
+module.exports = (app) => {
+  app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {});
+};
+```
+
+Remember to put the middlewares on the order that you want to execute
