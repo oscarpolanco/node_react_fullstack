@@ -2278,3 +2278,33 @@ const surveySchema = new Schema({
 #### Note
 
 - The underscore before `_user` is not obligatory but by convention, we use this for relationship files.
+
+### Create the survey route handler
+
+Now that we got our `survey` schema we can begin to work with the first of the `route hanlder` that will have all the `survey` logic that we need.
+
+- First go to the `route` directory and create a file call `surveyRoutes.js`
+- Now export a function that recive a parameter call `app`
+  `module.exports = (app) => {};`
+- Now go to the `index.js` file in the `server` directory
+- Require the file that we created and imidialy call a as a function sending the `app` object
+  `require("./routes/surveyRoutes")(app);`
+- Now on the `surveyRoutes.js` use the `post` function of `app` to match the `/api/surveys` endpoint
+
+```js
+module.exports = (app) => {
+  app.post("/api/surveys", (req, res) => {});
+};
+```
+
+- We need to make sure that the `user` is logged in so we can use the `requireLogin` middleware that we create before; to do this first require the middleware.
+  `const requireLogin = require("../middlewares/requireLogin");`
+- Then we can add it as part of our `route handler`
+
+```js
+const requireLogin = require("../middlewares/requireLogin");
+
+module.exports = (app) => {
+  app.post("/api/surveys", requireLogin, (req, res) => {});
+};
+```
