@@ -2370,3 +2370,67 @@ We use destructuring to get all the properties that we need from the request bod
     });
   };
   ```
+
+  As you may notice there are some missing properties of the `survey` but we separate those on its own steps because they need some more logic previews one
+
+- Now we can add the `recipients` property. On the body of the `request` we gonna receive an array of `emails`(strings) and we need to convert it on an array of `object` because this is how we define our `recipients` subdocument before so we are going to `split` by a `comma` the array and `map` throw every item and eliminating the `space` of every item that will form the new object as you see next
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+        recipients: recipients.split(",").map((email) => ({
+          email: email.trim(),
+        })),
+      });
+    });
+  };
+  ```
+
+  If you remember we got a `responded` property on our `Recipient` subdocument but is automatically set to `false` every time we create a new `recipient` so we don't need to add it
+
+- Then we need to add the `_user` property that will make the relation with the current `user` by sending it `id` that is on already on the `req` object that ve got
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+        recipients: recipients.split(",").map((email) => ({
+          email: email.trim(),
+        })),
+        _user: req.user.id,
+      });
+    });
+  };
+  ```
+
+- We don't create the `email` that we gonna sent yet but this is close to that moment so we can add the `dateSent` property at this time
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+        recipients: recipients.split(",").map((email) => ({
+          email: email.trim(),
+        })),
+        _user: req.user.id,
+        dateSent: Date.now(),
+      });
+    });
+  };
+  ```
