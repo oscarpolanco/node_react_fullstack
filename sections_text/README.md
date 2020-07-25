@@ -2291,36 +2291,36 @@ Now that we got our `survey` schema we can begin to work with the first of the `
   `require("./routes/surveyRoutes")(app);`
 - Now on the `surveyRoutes.js` use the `post` function of `app` to match the `/api/surveys` endpoint
 
-```js
-module.exports = (app) => {
-  app.post("/api/surveys", (req, res) => {});
-};
-```
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", (req, res) => {});
+  };
+  ```
 
 - We need to make sure that the `user` is logged in so we can use the `requireLogin` middleware that we create before; to do this first require the middleware.
   `const requireLogin = require("../middlewares/requireLogin");`
 - Then we can add it as part of our `route handler`
 
-```js
-const requireLogin = require("../middlewares/requireLogin");
+  ```js
+  const requireLogin = require("../middlewares/requireLogin");
 
-module.exports = (app) => {
-  app.post("/api/surveys", requireLogin, (req, res) => {});
-};
-```
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, (req, res) => {});
+  };
+  ```
 
 - Now we need to make sure that the `user` has the minimum number of credits to continue with the `route handler` logic. For this go to the `middleware` directory and create a file called `requireCredits`
 - Then export the following function that will have a condition that checks if the user has more than `0` credits and send a `403` status code if it doesn't have enough credits
 
-```js
-module.exports = (req, res, next) => {
-  if (req.credits < 1) {
-    return res.status(403).send({ error: "Not enough credits" });
-  }
+  ```js
+  module.exports = (req, res, next) => {
+    if (req.credits < 1) {
+      return res.status(403).send({ error: "Not enough credits" });
+    }
 
-  next();
-};
-```
+    next();
+  };
+  ```
 
 Why `403` status code? Because is the one that represents at this moment what we need; there is a [403](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.3) payment required status but is not implemented yet as you see in the [W3.org](https://www.w3.org/) documentation.
 
@@ -2328,10 +2328,45 @@ Why `403` status code? Because is the one that represents at this moment what we
   `const requireCredits = require("../middlewares/requireCredits");`
 - Add the `requireCredits` middleware on the `route handler`
 
-```js
-module.exports = (app) => {
-  app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {});
-};
-```
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {});
+  };
+  ```
 
 Remember to put the middlewares on the order that you want to execute
+
+### Creating surveys
+
+Since we finish with the `route handler` creation we can start to add some logic to create and save a new `survey` on our database.
+
+- Like we spoke before we spec that the body of the request has some properties that will be used, in this case, to create the `survey` so we can begin with this on our `route handler`
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+  };
+  ```
+
+We use destructuring to get all the properties that we need from the request body
+
+- Now we need `mongoose survey model` that we create before to create a new instance of a `survey` so you will need first to require `mongoose`
+  `const mongoose = require("mongoose");`
+- Then you will need to create a constant to get access to the `survey` model
+  `const Survey = mongoose.model("survey");`
+- Now create a new instance of a `survey` adding the properties that you need
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+      });
+    });
+  };
+  ```
