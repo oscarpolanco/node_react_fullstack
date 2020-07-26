@@ -2434,3 +2434,69 @@ We use destructuring to get all the properties that we need from the request bod
     });
   };
   ```
+
+### Creating Mailers
+
+We create the instance of the `survey` at this moment but this is not automaclly save in our `mongo` database but before to that save process is worth to talk about the flow of using that `survey` object and send an email to the `recipients`
+
+- At this point we create an instance of a `survey`
+- Then we gonna attempt to `create` and `send` an email to evey single `recipient` inside of the `survey`
+- After that we ask if the `email` was succesfully send
+- If is succefull we save the `survey`. We don't want to `save` the new `survey` if we wasn't able to send the `email` to the `recipients`
+
+This is the flow that is going to take place in the `route handler` that we work before
+
+#### Create and send an email
+
+To continue with the flow explanation we need to dive in in the parts that `create` and `send` the `email`.
+
+At this moment we got a `survey` instance kind of describe the `email` that we are gonna send out, in other words, our `data layer` but we need some code that describes what the `user` will see on the `email` so we will need an `email template` in other words it defines the structure of the `email`. When we got both pieces(`survey` instance and `email template`) we gonna merge those pieces in an object called `mailer` and this `mailer` object represent one single `email` that is going to be sent to one ore a list of people. Finally, after creating this `mailer` object we send it to our `email provider`(API that will automatically send the emails to the list of people that we need to send the `survey`).
+
+To dive a little bit on the `email provider` process; we gonna take all the `recipients` that are included inside of the `survey` and create one single `mailer` then send that `mailer` object to our `email provider` in a single network request then we leave to our `email provider` how is going to handle the sending the `email` to each individual `recipient`.
+
+The approach that talks in the previews paragraph will create an issue in our application. First, remember that for any given `email` we going to have an `email template` that is going to create the structure of the `email` like the subject and links that the `user` can click so if we are creating one `mailer` object to each `recipient` they all going to receive the same exact `email` including the links this will make us difficult to know which `recipient` one of our links in the `survey`(These links are important because we are gonna use it to know if a given `user` response our `survey` previously. We work on it in the `Recipients` model). To handle this issue we going to use our `email provider` at this case we going to use [Sendgrid](https://sendgrid.com/); that whenever we use `Sendgrid` to send a mail to one of our `users` automatically behind the scene it will look at the body of the `email` to see if there are links and if it finds a link it will change that to a custom link that sends it to their `Sendgrid` servers to collect metrics of the different links that the `user` is clicking then it will send then to the actual destination of the link. Also `Sengdrid` put in it custom link a `token` that uniquely identifies each `user` so `Sendgrid` know the actual `user` that click a link so at the moment that a `user` click on one of that custom links `Sendgrid` will send a message to our server telling us a link is clicked; this was the link and here is some information about the `user` that click that link. This last step that we mention refers to as a `webhook` that is anything that outside API facilitates a process and gives our application some kind of callback or a little notice that some event just occurs.
+
+### Setup Sengrid
+
+- First, need to create your `Sendgrid` account [here](https://signup.sendgrid.com/)
+- Fill the form with your personal and company information; if you are using the account just for testing put your name as the company
+- Verify your account with the `email` that `Sendgrid` send you
+- Now on the option called `Single sender` click on the `Single server verification`
+- Fill the form and if you are using this for testing you can put your name as a company name
+- Verify the `email sender`
+- Then on the `dashboard`, you're going to see a banner that said `send your first email`; open it options
+- Click on the `start` button of the `integrate using web API or SMTP relay` section
+- Then click on the `choose` button on the `Web api` section
+- Choose `Node.js`
+- Add a name for your `api key` in the `my first api key name` input
+- Click on the `Create key` button
+- Copy your key and store it in a save place
+- Now create a new project on your local machine
+- Inside of the root directory create a `package.json` file using: `npm init`
+- Install as a `dev` dependency `@sendgrid/mail` package
+  `npm install --save @sendgrid/mail`
+- Create a new file on your root directory call `test.js`
+- Copy the `Send your first email` snippet of code that is on the `Sendgrid` page
+- Add on the `line 4` your `Sendgrid` api key
+  `sgMail.setApiKey("SG.my.api.key");`
+- Change the `line 6` to an email that you can access
+- Change the `line 7` to the email that you verify as a sender on the `Sendgrid` page
+- Go to the `Sendgrid` page and check the `I've integrated the code above` to continue with the process
+- Then click on the `Next: Verify Integration` button
+- Now on your local terminal go to the project that you create with the snippet of code that you created before
+- Run the script using: `node test.js`
+- Check that you receive an `email` on the mail that you use on the `line 6`
+- If you successfully have the `email` go back to the `Sendgrid` page
+- Click on the `Verify integration` button
+- You should see a success message
+- Now we can add our `Sendgrid` key to the project. Go to the `dev.js` in the `server/config` directory and add a new property call `sendGridKey` with your key
+  `sendGridKey: "SG.your.api.key"`
+- Then go to the `prod.js` file in the same directory and add the `sendGridKey` with the `Heroku` evn variable as it value
+  `sendGridKey: process.env.SEND_GRID_KEY`
+- Go to your `Heroku` dashboard and choose the project of this application
+- Click on `settings`
+- Then click on the `show config vars` button
+- Add the `SEND_GRID_KEY` with your `Sendgrid` api key as it value
+- Click on the `add` button
+- Now finnaly on your terminal go to the `server` directory and install the `Sendgrid` dependency
+  `npm install --save sendgrid`
