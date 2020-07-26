@@ -2354,7 +2354,7 @@ We use destructuring to get all the properties that we need from the request bod
 - Now we need `mongoose survey model` that we create before to create a new instance of a `survey` so you will need first to require `mongoose`
   `const mongoose = require("mongoose");`
 - Then you will need to create a constant to get access to the `survey` model
-  `const Survey = mongoose.model("survey");`
+  `const Survey = mongoose.model("surveys");`
 - Now create a new instance of a `survey` adding the properties that you need
 
   ```js
@@ -2498,5 +2498,5 @@ The approach that talks in the previews paragraph will create an issue in our ap
 - Then click on the `show config vars` button
 - Add the `SEND_GRID_KEY` with your `Sendgrid` api key as it value
 - Click on the `add` button
-- Now finnaly on your terminal go to the `server` directory and install the `Sendgrid` dependency
+- Now finally on your terminal go to the `server` directory and install the `Sendgrid` dependency
   `npm install --save sendgrid`
