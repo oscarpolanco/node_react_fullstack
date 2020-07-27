@@ -2500,3 +2500,24 @@ The approach that talks in the previews paragraph will create an issue in our ap
 - Click on the `add` button
 - Now finally on your terminal go to the `server` directory and install the `Sendgrid` dependency
   `npm install --save sendgrid`
+
+### Mailer Setup
+
+To setup the `mailer` object we are gonna use a `class` that will have a set of propeties that are going to help us to create and send the `email`. At this case we will have a property that call the `subject` that as you may know will be the `subject` of the `email` also a `recipeints` property that will tell all the `emails` that we will send our `email`; those properties we already have the information in our `survey` instantce. Next we will have the `body` property that have the actual text of the `email` and at this moment the `email template`(provide the actual `html` body of the `email`) enters in action; where we pass one or two properties from the `survey` model and the `template` will produce some `html` that will be the actual `body` of the `email`. Finally we have a `from_email` property is the `email` address that we are gonna put in the `from` field of the `email`.
+
+After define our `mailer` object we are gonna call a function that go by the name `toJson()` that take all the different configuration that we did on the `mailer` object and transform it on a `JSON` data and finally send it to `SendGrid`.
+
+#### Steps to build the Mailer
+
+- On the `server/services` directory create a file call `Mailer.js`
+- Inside of the `Mailer.js` file import the `Sendgrid` module
+  `const sendgrid = require("sendgrid");`
+- Then create an object call `helper` with `sendgrid.mail` as it value
+  `const helper = sendgrid.mail;`
+
+  We can use `ES6` to export directly the `mail` object from the `sendgrid` module but on the `sengrid` documentation they call this object `helper` so we will follow it combention.
+
+- Then require the `keys` of the project
+  `const keys = require("../config/keys");`
+- Now create a `class` call `Mailer` that extend from `helper.mail`
+  `class Mailer extends helper.Mail {}`
