@@ -2503,9 +2503,9 @@ The approach that talks in the previews paragraph will create an issue in our ap
 
 ### Mailer Setup
 
-To setup the `mailer` object we are gonna use a `class` that will have a set of propeties that are going to help us to create and send the `email`. At this case we will have a property that call the `subject` that as you may know will be the `subject` of the `email` also a `recipeints` property that will tell all the `emails` that we will send our `email`; those properties we already have the information in our `survey` instantce. Next we will have the `body` property that have the actual text of the `email` and at this moment the `email template`(provide the actual `html` body of the `email`) enters in action; where we pass one or two properties from the `survey` model and the `template` will produce some `html` that will be the actual `body` of the `email`. Finally we have a `from_email` property is the `email` address that we are gonna put in the `from` field of the `email`.
+To set up the `mailer` object we are gonna use a `class` that will have a set of properties that are going to help us to create and send the `email`. At this case we will have a property that calls the `subject` that as you may know will be the `subject` of the `email` also a `recipients` property that will tell all the `emails` that we will send our `email`; those properties we already have the information in our `survey` instance. Next, we will have the `body` property that has the actual text of the `email` and at this moment the `email template`(provide the actual `HTML` body of the `email`) enters in action; where we pass one or two properties from the `survey` model and the `template` will produce some `HTML` that will be the actual `body` of the `email`. Finally, we have a `from_email` property is the `email` address that we are gonna put in the `from` field of the `email`.
 
-After define our `mailer` object we are gonna call a function that go by the name `toJson()` that take all the different configuration that we did on the `mailer` object and transform it on a `JSON` data and finally send it to `SendGrid`.
+After defining our `mailer` object we are gonna call a function that goes by the name `toJson()` that takes all the different configuration that we did on the `mailer` object and transform it on a `JSON` data and finally send it to `SendGrid`.
 
 #### Steps to build the Mailer
 
@@ -2515,9 +2515,32 @@ After define our `mailer` object we are gonna call a function that go by the nam
 - Then create an object call `helper` with `sendgrid.mail` as it value
   `const helper = sendgrid.mail;`
 
-  We can use `ES6` to export directly the `mail` object from the `sendgrid` module but on the `sengrid` documentation they call this object `helper` so we will follow it combention.
+  We can use `ES6` to export directly the `mail` object from the `SendGrid` module but on the `SendGrid` documentation they call this object `helper` so we will follow its combination.
 
 - Then require the `keys` of the project
   `const keys = require("../config/keys");`
 - Now create a `class` call `Mailer` that extend from `helper.mail`
   `class Mailer extends helper.Mail {}`
+
+#### Mailer in use
+
+Now that we got the `mailer` we can begin to do a basic implementation of it.
+
+- First in the `surveyRoute` file import the `Mailer` class
+  `const Mailer = require("../services/Mailer");`
+- Now we need to create the `template` function that we going to send to the `Mailer` so on the `services` directory create a folder call `emailTemplate`
+- Inside of the new directory create a file call `surveyTemplate.js`
+- Inside of the `surveyTemplate.js` export a function that recive a the `survey` instance
+  `module.exports = (survey) => {}`
+- Now return a string with the `survey` body
+
+  ```js
+  module.exports = (survey) => {
+    return `<div>${survey.body}</div>`;
+  };
+  ```
+
+- Then import the `surveyTemplate` in the `surveyRoute` file
+  `const surveyTemplate = require("../services/emailTemplates/surveyTemplate");`
+- Now bellow the `survey` instance create a new `Mailer` instance sending the `survey` object and the `surveyTemplate` function with a `survey` as it parameter as a `class` configuration
+  `const mailer = new Mailer(survey, surveyTemplate(survey));`
