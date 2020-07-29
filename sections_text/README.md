@@ -2635,6 +2635,24 @@ We did it this way so we can reuse the `Mailer` class for other types of emails,
 - Now call the `addRecipients` function on the constructor
   `this.addRecipients();`
 
+- Finally we create our last property call `sgApi` that will be the representation of the `Sendgrid` library. We need to send our `Sendgrid` secret key
+  `this.sgApi = sendgrid(keys.sendGridKey);`
+
+- Now we need to create a function that actually send the email
+
+  ```js
+  async send() {
+    const request = this.sgApi.emptyRequest({
+      method: "POST",
+      path: "/v3/mail/send",
+      body: this.toJSON(),
+    });
+
+    const response = this.sgApi.API(request);
+    return response;
+  }
+  ```
+
 #### Mailer in use
 
 Now that we got the `mailer` we can begin to do a basic implementation of it.
