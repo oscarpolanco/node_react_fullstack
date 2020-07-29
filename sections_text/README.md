@@ -2576,7 +2576,48 @@ We did it this way so we can reuse the `Mailer` class for other types of emails 
 
   On the `body` property we use the `helper.Content` function to specify we are going to use `text/html` as it content
 
-- At this moment we still missing the `recipients` property but before that we create it we need to have some amount of logic to process the data that we recive as a parameter so we are going to create a `formatAddresses` function that recive the `recipients` parameter.
+- At this moment we still missing the `recipients` property but before that we create it we need to have some amount of logic to process the data that we recive as a parameter so we are going to create a `formatAddresses` function that recive the `recipients` parameter and return the result of using a `map` function with the `recipients` and the `helper.Email` function
+
+  ```js
+  formatAddresses(recipients) {
+    return recipients.map(({ email }) => {
+      return new helper.Email(email);
+    });
+  }
+  ```
+
+- Now you can create the `recipients` property
+
+  ```js
+  constructor({ subject, recipients }, content) {
+    super();
+
+    this.from_email = new helper.Email(keys.senderEmail);
+    this.subject = subject;
+    this.body = new helper.Content("text/html", content);
+    this.recipients = this.formatAddresses(recipients);
+  }
+  ```
+
+- We need to add the `body` to the actual content of the mail using a function of the `helper.Mail` class call `addContent`
+  `this.addContent(this.body);`
+- Now we need to enable the `keep tracking` of our email(Remember that we need to keep track of the links that are press) that will tell `Sengrid` to scan the email and replace all links with their custom links so we will create a function call `addClicktracking`
+
+  ```js
+  addClickTracking() {
+    const trackingSettings = new helper.TrackingSettings();
+    const clickTracking = new helper.ClickTracking(true, true);
+
+    trackingSettings.setClickTracking(clickTracking);
+    this.addTrackingSettings(trackingSettings);
+  }
+  ```
+
+  This is the configuration that they provide on it documentation
+
+- Use the `addClickTracking` on the `constructor`
+  `this.addClickTracking();`
+- Now we need to add a fuction to add the `recipients`
 
 #### Mailer in use
 
