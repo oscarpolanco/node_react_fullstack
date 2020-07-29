@@ -2521,6 +2521,62 @@ After defining our `mailer` object we are gonna call a function that goes by the
   `const keys = require("../config/keys");`
 - Now create a `class` call `Mailer` that extend from `helper.mail`
   `class Mailer extends helper.Mail {}`
+- Then we need to create a `costructor` that is the first function that is gonna be call when a new instance of the `Mailer` class is created
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor() {}
+  }
+  ```
+
+- Now we need to define the arguments that are gonna be in the constructure that are the same provide as an arguments when we use the `new` keyword when we create an instance of a class. At this time we are gonna recive an `object` with a `subject` and `recipients` properties and a second argument with the `content`(template) of the mail.
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor({ subject, recipients }, content) {}
+  }
+  ```
+
+We did it this way so we can reuse the `Mailer` class for other types of emails not just a `survey` email
+
+- Now we make sure that any `constructure` in the `Mailer` class get call using the `super` function
+
+  ```js
+  class Mailer extends helper.Mail {
+  constructor({ subject, recipients }, content) {
+    super();
+  }
+  ```
+
+- Then we need to create the a propety that is call `from_email` that will represent the `from` information of the email. Make sure that you put the email that is specify as a `sender` on the `Sengrid` page
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor({ subject, recipients }, content) {
+      super();
+
+      this.from_email = new helper.Email("your_email@example.com");
+    }
+  }
+  ```
+
+- The next property is the `subject` and `body` that will recive the information from the parameter that recive the `constructure`
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor({ subject, recipients }, content) {
+      super();
+
+      this.from_email = new helper.Email("your_email@example.com");
+      this.subject = subject;
+      this.body = new helper.Content("text/html", content);
+    }
+  }
+  ```
+
+  On the `body` property we use the `helper.Content` function to specify we are going to use `text/html` as it content
+
+- At this moment we still missing the `recipients` property but before that we create it we need to have some amount of logic to process the data that we recive as a parameter so we are going to create a `formatAddresses` function that recive the `recipients` parameter.
 
 #### Mailer in use
 
