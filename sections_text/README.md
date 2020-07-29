@@ -2521,7 +2521,7 @@ After defining our `mailer` object we are gonna call a function that goes by the
   `const keys = require("../config/keys");`
 - Now create a `class` call `Mailer` that extend from `helper.mail`
   `class Mailer extends helper.Mail {}`
-- Then we need to create a `costructor` that is the first function that is gonna be call when a new instance of the `Mailer` class is created
+- Then we need to create a `constructor` that is the first function that is gonna be called when a new instance of the `Mailer` class is created
 
   ```js
   class Mailer extends helper.Mail {
@@ -2529,7 +2529,7 @@ After defining our `mailer` object we are gonna call a function that goes by the
   }
   ```
 
-- Now we need to define the arguments that are gonna be in the constructure that are the same provide as an arguments when we use the `new` keyword when we create an instance of a class. At this time we are gonna recive an `object` with a `subject` and `recipients` properties and a second argument with the `content`(template) of the mail.
+- Now we need to define the arguments that are gonna be in the constructor that are the same provide as arguments when we use the `new` keyword when we create an instance of a class. At this time we are gonna receive an `object` with a `subject` and `recipients` properties and a second argument with the `content`(template) of the mail.
 
   ```js
   class Mailer extends helper.Mail {
@@ -2537,9 +2537,9 @@ After defining our `mailer` object we are gonna call a function that goes by the
   }
   ```
 
-We did it this way so we can reuse the `Mailer` class for other types of emails not just a `survey` email
+We did it this way so we can reuse the `Mailer` class for other types of emails, not just a `survey` email
 
-- Now we make sure that any `constructure` in the `Mailer` class get call using the `super` function
+- Now we make sure that any `constructor` in the `Mailer` class get call using the `super` function
 
   ```js
   class Mailer extends helper.Mail {
@@ -2548,7 +2548,7 @@ We did it this way so we can reuse the `Mailer` class for other types of emails 
   }
   ```
 
-- Then we need to create the a propety that is call `from_email` that will represent the `from` information of the email. Make sure that you put the email that is specify as a `sender` on the `Sengrid` page
+- Then we need to create a property that is called `from_email` that will represent the `from` information of the email. Make sure that you put the email that is specified as a `sender` on the `Sendgrid` page
 
   ```js
   class Mailer extends helper.Mail {
@@ -2560,7 +2560,7 @@ We did it this way so we can reuse the `Mailer` class for other types of emails 
   }
   ```
 
-- The next property is the `subject` and `body` that will recive the information from the parameter that recive the `constructure`
+- The next property is the `subject` and `body` that will receive the information from the parameter that receive the `constructor`
 
   ```js
   class Mailer extends helper.Mail {
@@ -2576,7 +2576,7 @@ We did it this way so we can reuse the `Mailer` class for other types of emails 
 
   On the `body` property we use the `helper.Content` function to specify we are going to use `text/html` as it content
 
-- At this moment we still missing the `recipients` property but before that we create it we need to have some amount of logic to process the data that we recive as a parameter so we are going to create a `formatAddresses` function that recive the `recipients` parameter and return the result of using a `map` function with the `recipients` and the `helper.Email` function
+- At this moment we still missing the `recipients` property but before that we create it we need to have some amount of logic to process the data that we receive as a parameter so we are going to create a `formatAddresses` function that receive the `recipients` parameter and return the result of using a `map` function with the `recipients` and the `helper.Email` function
 
   ```js
   formatAddresses(recipients) {
@@ -2601,7 +2601,7 @@ We did it this way so we can reuse the `Mailer` class for other types of emails 
 
 - We need to add the `body` to the actual content of the mail using a function of the `helper.Mail` class call `addContent`
   `this.addContent(this.body);`
-- Now we need to enable the `keep tracking` of our email(Remember that we need to keep track of the links that are press) that will tell `Sengrid` to scan the email and replace all links with their custom links so we will create a function call `addClicktracking`
+- Now we need to enable the `link tracking` of our email(Remember that we need to keep track of the links that are press) that will tell `Sendgrid` to scan the email and replace all links with their custom links so we will create a function call `addClicktracking`
 
   ```js
   addClickTracking() {
@@ -2613,11 +2613,27 @@ We did it this way so we can reuse the `Mailer` class for other types of emails 
   }
   ```
 
-  This is the configuration that they provide on it documentation
+  This is the configuration that they provide on its documentation
 
 - Use the `addClickTracking` on the `constructor`
   `this.addClickTracking();`
-- Now we need to add a fuction to add the `recipients`
+- Now we need to add a fuction to take and process the list of `recipients`
+
+  ```js
+  addRecipients() {
+    const personalize = new helper.Personalization();
+
+    this.recipients.forEach((recipients) => {
+      personalize.addTo(recipients);
+    });
+    this.addPersonalization(personalize);
+  }
+  ```
+
+  This is also the way `Sendgrid` documentation shows us to add the `recipients`
+
+- Now call the `addRecipients` function on the constructor
+  `this.addRecipients();`
 
 #### Mailer in use
 
