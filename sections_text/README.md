@@ -2648,7 +2648,7 @@ We did it this way so we can reuse the `Mailer` class for other types of emails,
       body: this.toJSON(),
     });
 
-    const response = this.sgApi.API(request);
+    const response = await this.sgApi.API(request);
     return response;
   }
   ```
@@ -2728,3 +2728,36 @@ module.exports = (survey) => {
 ```
 
 Later we will update the `anchor` tag to redirect to the correct place. Now you can follow the same process that you use before to send an `email` and you should see the update on the body of the `email` and if you take a look at the `anchors` that are on the `email` you will see that `Sengrid` update the `href` as we mentioned before.
+
+### Save the survey and update the user
+
+Now that we test the `Mailer` class we can continue working with the `surveyRoute`. At this moment we need to `save` the `survey` and subtract one `credit` from the user that sent the `survey` so we need to follow the next steps
+
+- On the `surveryRoute` file sice some operations that we are going to do are `asynchronous` we need to put the `async` keyword on the `handler` arorw function
+  `app.post("/api/surveys", requireLogin, requireCredits, async (req, res) => {..}`
+- Now after the creation of the `mailer` object we `send` the `email` but you need to wait that this operation finishes so we need to add the `await` keyword to it
+  `await mailer.send();`
+- Then we need to `save` the `survey` in our database so we use the `save` function and add the `await` keyword to it
+  `await survey.save();`
+- After saving the `survey` we need to subtract 1 `credit` from the current `user` that we have on the `req` object
+  `req.user.credits -= 1;`
+- Then we `save` the updated `user` to our database and from now we use the object that the `save` function returns as our updated `user`
+  `const user = await req.user.save();`
+- Now we can send the updated `user` on the respond
+  `res.send(user);`
+- Finally, we need to add a `try/catch` block to handle the `errors` that can occur on those operations and if we have an error we send a `422` status(`Unprocessable Entity`) with the error as a response to the `user`
+
+  ```js
+  try {
+    await mailer.send();
+    await survey.save();
+    req.user.credits -= 1;
+    const user = await req.user.save();
+
+    res.send(user);
+  } catch (err) {
+    res.status(422).send(err);
+  }
+  ```
+
+Now you can test again sending an `email` and on the `network` tag of the browser see the response of the `survey` request.
