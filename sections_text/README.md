@@ -2828,3 +2828,21 @@ We can continue working on the `route handlers` that still need to do in order t
 - No matter that we already install and use `materialize-css` on our application; we don't have any `icon` to use so we need to use a `link` tag to have the ability to use the `materialize-css` icons. So go to the `index.html` in the `public` directory and add this:
   `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
 - You should see a button with a `plus` icon in the `dashboard` page
+- Now we need to navigate between `routes` using the button so this mean that we need to use the `Link` component that `react-router-dom` provide to us instead of the `anachor` tag that we put to create the button. First import the `Link` component
+  `import { Link } from "react-router-dom";`
+- Update the button `anchor` using the `Link` compoent
+
+  ```js
+  const Dashboard = () => {
+    return (
+      <div>
+        Dashboard
+        <div className="fixed-action-btn">
+          <Link to="/surveys/new" className="btn-floating btn-large red">
+            <i className="material-icons">add</i>
+          </Link>
+        </div>
+      </div>
+    );
+  };
+  ```
