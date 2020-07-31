@@ -2675,3 +2675,26 @@ Now that we got the `mailer` we can begin to do a basic implementation of it.
   `const surveyTemplate = require("../services/emailTemplates/surveyTemplate");`
 - Now bellow the `survey` instance create a new `Mailer` instance sending the `survey` object and the `surveyTemplate` function with a `survey` as it parameter as a `class` configuration
   `const mailer = new Mailer(survey, surveyTemplate(survey));`
+- Finally, we can test the `Mailer` class. First; bellow of the `mailer` object that you just created called the `send` method that we create before in the `Mailer` class
+  `mailer.send();`
+- Since we need to be logged in and have credits to test the route we are gonna take advantage of the `session` on the browser; to do this first we need to go to the `index.js` in the `client/src` directory and import the `axios` library
+  `import axios from "axios";`
+- Then create a property called `axios` on the `windows` object that contains the `axios` object that you imported
+  `window.axios = axios;`
+- Run the local `servers`
+- Login in the application(make sure that the account have credits)
+- Open the browser's `console`
+- Create a `survey` object with all the properties that it needs to send an email
+
+  ```js
+  const survey = {
+    title: "my title",
+    subject: "my subject",
+    recipients: "valid.email@example.com",
+    body: "here is the body of the email",
+  };
+  ```
+
+- Now call the `post` function from `axios` with the `/api/survey` endpoint and the `survey` object that you created
+  `axios.post('/api/surveys', survey);`
+- The request will be pending because we don't create a `response` on the `route handler` yet but you should receive an `email` in the mail that you specify as `recipient` in the `recipients` property
