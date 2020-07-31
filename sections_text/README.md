@@ -2760,4 +2760,28 @@ Now that we test the `Mailer` class we can continue working with the `surveyRout
   }
   ```
 
-Now you can test again sending an `email` and on the `network` tag of the browser see the response of the `survey` request.
+Now you can test again sending an `email` and on the `network` tag of the browser see the response of the `survey` request and you can go to your `Sendgrid` account and on the `Activity` section on your dashboard, you can see the information that `Sendgrid` get about the emails that you send.
+
+### Feedback for the user
+
+If you notice we still have our local URL in the links of the `body` on the `email`; this is fine when we are working locally but we need a way to specify the environment that we need and it a little weird for our users that we send then to the front page of our application after they click the link of the `email` so we will add a new simple `route` to let then know that they actually are voting for in a `survey`
+
+- First, go to the `dev.js` file in the `server/config` directory
+- Add a new property call `redirectDomain` with the local URL of our application
+  `redirectDomain: "http://localhost:3000"`
+- Now got to the `prod.js` file in the same directory and add the same property with the `Heroku` environment variable
+  `redirectDomain: process.env.REDIRECT_DOMAIN`
+- Now go to `Heroku` and add the `REDIRECT_DOMAIN`(we follow that process before) with the URL of your `Heroku` app
+- Then go to the `surveyRoute` and add the following `route handler`
+
+  ```js
+  app.get("/api/surveys/thanks", (req, res) => {
+    res.send("Thanks for voting!");
+  });
+  ```
+
+- Go to the `surveyTemplate` file on the `services/emailTemplate`
+- Require the `keys` file
+  `const keys = require("../../config/keys");`
+- Finally on both anchor tags add the following url
+  `href="${keys.redirectDomain}/api/surveys/thanks"`
