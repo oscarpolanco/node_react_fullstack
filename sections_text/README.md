@@ -2806,3 +2806,25 @@ We can continue working on the `route handlers` that still need to do in order t
 - Now go to the `App.js` file and `import` the new `Dashboard` component
   `import Dashboard from "./Dashboard";`
 - Delete the example `Dashboard` function
+- Go back to the `Dashboard` component and add the following code
+
+  ```js
+  const Dashboard = () => {
+    return (
+      <div>
+        Dashboard
+        <div className="fixed-action-btn">
+          <a className="btn-floating btn-large red">
+            <i className="material-icons">add</i>
+          </a>
+        </div>
+      </div>
+    );
+  };
+  ```
+
+  With `materiliza-css` this will add a button on the rigth corner of the browser that will be in charge of redirect us to the `survey` form
+
+- No matter that we already install and use `materialize-css` on our application; we don't have any `icon` to use so we need to use a `link` tag to have the ability to use the `materialize-css` icons. So go to the `index.html` in the `public` directory and add this:
+  `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
+- You should see a button with a `plus` icon in the `dashboard` page
