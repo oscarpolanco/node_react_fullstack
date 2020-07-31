@@ -2130,3 +2130,658 @@ In the `package.json` on the `server` directory on the `scripts` property add th
 - `&& npm run build --prefix client`: Afte the `install` command finish will run create the `build` directory that contains all our production assets
 
 Now you can commit your changes to `git` and make a `push` to `Heroku`. You should see that the `client` side is on your production server.
+
+## Section 10: Mongoose for survey creation
+
+We are gonna continue with the next feature of our application that is the `survey` endpoint on our API in other words the ability of our user to create `surveys`, to send it out, and somehow receive feedback. Here is the flow of what is going to happen when the user creates a `survey`:
+
+- The user creates a `survey` with a simple `yes/no` question (when we solicitude feedback we gonna ask just a `yes/no` question; is simple for the example)
+- Then the `user` is going to send the `survey` to our backend API
+- After that our backend API are gonna take all that `survey` information (like the title; the people to send it to and the question to ask) and is going to create a template out of it
+- Then the `express` server is going to use 3rd party email provider to send a big email to all the people that should receive the `survey`
+- When the `users` receive an email with the `survey` will click `yes/no` to respond to the `survey`
+- Then the `email` provider will note the `user` respond
+- At that moment the `email` provider will send a note to our `express` server with the respond of the `user` in a particular `survey`
+- Finally, our `express` server is responsible to record the feedback in our `mongo` database
+
+### Survey routes
+
+- `GET /api/surveys`: When the user makes a request to this route will find all the `surveys` that the user-created and return back to them.
+
+- `POST /api/surveys`: Handle the case of the `users` that want to create a new `survey` and have it to automatically email out to everyone they want. When a `user` makes this request we spec that it send this 4 pieces of data:
+
+  - `title`: The title of the `survey` (name of the `survey` that the `user` will see on our application)
+  - `subject`: The subject line that will be shown on the `email`
+  - `body`: The text that will be shown on the `email`
+  - `recipients`: The comma-separated list of email addresses to send a survey to
+
+- `POST /api/surveys/webhooks`: Receive feedback from the `user` that receive an `email` and click the link on the `survey`.
+
+### Survey model
+
+The easiest part that we can begin in the `survey` process is the creation of the `survey` because the other 2 endpoints depends that a `survey` exist.
+
+So to begin we need to work with the database to store the `surveys`; this means that we need to create a `model` that will create the records that we need but is the word to notice that we need some kind of connection between the `survey` class and the `user` class so we can relate with `user` create the `survey`.
+
+Now on the `models` directory create a file call `Survey.js` and add the following:
+
+- Require `mongoose`: `const mongoose = require("mongoose");`
+- Get the `schema` from `mongoose`: `const { Schema } = mongoose;`
+- Create a new `schema` with the propeties that we mention before that will represent our `survey`
+
+  ```js
+  const surveySchema = new Schema({
+    title: String,
+    body: String,
+    subject: String,
+    recipients: [String],
+  });
+  ```
+
+  Note that the `recipients` property will be an `array` of `strings` for the moment.
+
+- Finally add the new `model` to the database using `monogoose`: `mongoose.model("survey", surveySchema);`
+- Go to the `index.js` file on the root of the `server` directory and bellow the `user` model require statement; require the `survey` model: `require("./models/Survey");`
+
+Looking at that `schema` that we just did we can say that we will have to deficiencies:
+
+- The first one is a simple one; where do we store our `feedback`?. At this moment we don't have any way to update the record when a given `user` press `yes/no` on a `survey` and we won't able to know how many `yes/no` have been press by the `users` that you send the `email`. For this we gonna add 2 properties with the respective name of the option; in this case `yes/no`; that will store the count of the click of the options.
+
+- Now imagine that a `user` press a lot of times one of the options; at this moment we don't have any record that tells us is a given `user` has already provided some amount of `feedback`; for this, we need to introduce some additional property that somehow record that some given `user` has summited some `feedback` but the issue on adding a new property is that we don't have much information of the `users` that receive the `surveys`; just the `recipients` have the list of the `emails` to send the `survey`. At this moment an `array` of `string` is not appropriate to store the information that we need so inside of our `recipients` properties we gonna embed a `subdocument collection` that will have a couple of little `models` call `recipients` with 2 properties; one call `email`(is the `email` of a given `user`) and the other call `clicked`(a `boolean` flag that represent that a given `user` click an option).
+
+Now we can add the options of the `survey` on the `schema`. Go to the `Survey.js` file on the `models` directory and add the following:
+
+```js
+const surveySchema = new Schema({
+  title: String,
+  body: String,
+  subject: String,
+  recipients: [String],
+  yes: { type: Number, default: 0 },
+  no: { type: Number, default: 0 },
+});
+```
+
+### Limitations of the subdocuments collections
+
+As we mention before; at the instant that we create our `survey` model, we get a new `collection` on our `mongo` database that store a list of `surveys` and we refer to this as a `survey collection` so inside of the `survey collection` we got a bunch of different `instances/records` that represent a `survey` and we can store a variety of `records` inside of a `survey` that we call `subdocument collection`(in this case `recipients`). We use this `subdocument collections` when we want to make a very clear association between 2 given `records`(in our case a `recipient` will only belong to it parent `survey` and this `recipient` don't have any use for any other `survey`). Knowing this you may ask; why the `surveys` are not `subdocuments` of the `user`? And the reason is the physical limitations of `MongoDB`. In `MongoDB` we refer to each `record` inside of a `collection` as a `document` and we have limited sizes to each of them; that is `4mb` and we will limit the amount of `email` per `survey` to be less than the complete `4mb`.
+
+### Setting up subDocs
+
+Now we gonna add the `subdocument collection` to our `survey` collection.
+
+- Insde of the `models` directory create a file call `Recipient.js`
+- Inside of the `Recipient.js` file require `mongoose`: `const mongoose = require("mongoose");`
+- Then pull of the `Schema` object from `mongoose`: `const { Schema } = mongoose;`
+- Now create a `schema` for the `recipient` wit a property call `email` that is a `string` and a property call `responded` that is a `boolean` with a default of `false`
+
+  ```js
+  const recipientSchema = new Schema({
+    email: String,
+    responded: { type: Boolean, default: false },
+  });
+  ```
+
+- Now exports the `recipientSchema`: `module.exports = recipientSchema;`
+- Go to the `Survey.js` file and import the `recipientSchema`: `const RecipientSchema = require("./Recipient");`
+- Finally update the `recipient` property in the `surveySchema` adding a value of a list of `RecipientSchema`
+
+  ```js
+  const surveySchema = new Schema({
+    title: String,
+    body: String,
+    subject: String,
+    recipients: [RecipientSchema],
+    yes: { type: Number, default: 0 },
+    no: { type: Number, default: 0 },
+  });
+  ```
+
+### Relathionship fiels
+
+As we told before one user will have many `surveys` so we need to somehow identify which server belongs to which user so we need to add another property to make that relationship.
+
+On the `survey` schema add a `_user` property
+
+```js
+const surveySchema = new Schema({
+  title: String,
+  body: String,
+  subject: String,
+  recipients: [RecipientSchema],
+  yes: { type: Number, default: 0 },
+  no: { type: Number, default: 0 },
+  _user: { type: Schema.Types.ObjectId, ref: "User" },
+});
+```
+
+- `_user`: Reference to a particular `user`.
+- `type: Schema.Types.ObjectId`: This will contain the `id` of the user that owns this record.
+- `ref: "User"`: The reference that we do with the `id` belongs to the `user` collection.
+
+Not related to the topic we also add 2 properties of `Date` with the information on when the `survey` is sent and when the last time someone responds.
+
+```js
+const surveySchema = new Schema({
+  title: String,
+  body: String,
+  subject: String,
+  recipients: [RecipientSchema],
+  yes: { type: Number, default: 0 },
+  no: { type: Number, default: 0 },
+  _user: { type: Schema.Types.ObjectId, ref: "User" },
+  dateSent: Date,
+  lastResponded: Date,
+});
+```
+
+#### Note
+
+- The underscore before `_user` is not obligatory but by convention, we use this for relationship files.
+
+### Create the survey route handler
+
+Now that we got our `survey` schema we can begin to work with the first of the `route handler` that will have all the `survey` logic that we need.
+
+- First go to the `route` directory and create a file call `surveyRoutes.js`
+- Now export a function that recive a parameter call `app`
+  `module.exports = (app) => {};`
+- Now go to the `index.js` file in the `server` directory
+- Require the file that we created and imidialy call a as a function sending the `app` object
+  `require("./routes/surveyRoutes")(app);`
+- Now on the `surveyRoutes.js` use the `post` function of `app` to match the `/api/surveys` endpoint
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", (req, res) => {});
+  };
+  ```
+
+- We need to make sure that the `user` is logged in so we can use the `requireLogin` middleware that we create before; to do this first require the middleware.
+  `const requireLogin = require("../middlewares/requireLogin");`
+- Then we can add it as part of our `route handler`
+
+  ```js
+  const requireLogin = require("../middlewares/requireLogin");
+
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, (req, res) => {});
+  };
+  ```
+
+- Now we need to make sure that the `user` has the minimum number of credits to continue with the `route handler` logic. For this go to the `middleware` directory and create a file called `requireCredits`
+- Then export the following function that will have a condition that checks if the user has more than `0` credits and send a `403` status code if it doesn't have enough credits
+
+  ```js
+  module.exports = (req, res, next) => {
+    if (req.credits < 1) {
+      return res.status(403).send({ error: "Not enough credits" });
+    }
+
+    next();
+  };
+  ```
+
+Why `403` status code? Because is the one that represents at this moment what we need; there is a [403](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.3) payment required status but is not implemented yet as you see in the [W3.org](https://www.w3.org/) documentation.
+
+- With this you can add it on the `surveyRoutes` file. First require the new middleware
+  `const requireCredits = require("../middlewares/requireCredits");`
+- Add the `requireCredits` middleware on the `route handler`
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {});
+  };
+  ```
+
+Remember to put the middlewares on the order that you want to execute
+
+### Creating surveys
+
+Since we finish with the `route handler` creation we can start to add some logic to create and save a new `survey` on our database.
+
+- Like we spoke before we spec that the body of the request has some properties that will be used, in this case, to create the `survey` so we can begin with this on our `route handler`
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+  };
+  ```
+
+We use destructuring to get all the properties that we need from the request body
+
+- Now we need `mongoose survey model` that we create before to create a new instance of a `survey` so you will need first to require `mongoose`
+  `const mongoose = require("mongoose");`
+- Then you will need to create a constant to get access to the `survey` model
+  `const Survey = mongoose.model("surveys");`
+- Now create a new instance of a `survey` adding the properties that you need
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+      });
+    });
+  };
+  ```
+
+  As you may notice there are some missing properties of the `survey` but we separate those on its own steps because they need some more logic previews one
+
+- Now we can add the `recipients` property. On the body of the `request` we gonna receive an array of `emails`(strings) and we need to convert it on an array of `object` because this is how we define our `recipients` subdocument before so we are going to `split` by a `comma` the array and `map` throw every item and eliminating the `space` of every item that will form the new object as you see next
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+        recipients: recipients.split(",").map((email) => ({
+          email: email.trim(),
+        })),
+      });
+    });
+  };
+  ```
+
+  If you remember we got a `responded` property on our `Recipient` subdocument but is automatically set to `false` every time we create a new `recipient` so we don't need to add it
+
+- Then we need to add the `_user` property that will make the relation with the current `user` by sending it `id` that is on already on the `req` object that ve got
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+        recipients: recipients.split(",").map((email) => ({
+          email: email.trim(),
+        })),
+        _user: req.user.id,
+      });
+    });
+  };
+  ```
+
+- We don't create the `email` that we gonna sent yet but this is close to that moment so we can add the `dateSent` property at this time
+
+  ```js
+  module.exports = (app) => {
+    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+      const { title, subject, body, recipients } = req.body;
+
+      const survey = new Survey({
+        title,
+        subject,
+        body,
+        recipients: recipients.split(",").map((email) => ({
+          email: email.trim(),
+        })),
+        _user: req.user.id,
+        dateSent: Date.now(),
+      });
+    });
+  };
+  ```
+
+### Creating Mailers
+
+We create the instance of the `survey` at this moment but this is not automaclly save in our `mongo` database but before to that save process is worth to talk about the flow of using that `survey` object and send an email to the `recipients`
+
+- At this point we create an instance of a `survey`
+- Then we gonna attempt to `create` and `send` an email to evey single `recipient` inside of the `survey`
+- After that we ask if the `email` was succesfully send
+- If is succefull we save the `survey`. We don't want to `save` the new `survey` if we wasn't able to send the `email` to the `recipients`
+
+This is the flow that is going to take place in the `route handler` that we work before
+
+#### Create and send an email
+
+To continue with the flow explanation we need to dive in in the parts that `create` and `send` the `email`.
+
+At this moment we got a `survey` instance kind of describe the `email` that we are gonna send out, in other words, our `data layer` but we need some code that describes what the `user` will see on the `email` so we will need an `email template` in other words it defines the structure of the `email`. When we got both pieces(`survey` instance and `email template`) we gonna merge those pieces in an object called `mailer` and this `mailer` object represent one single `email` that is going to be sent to one ore a list of people. Finally, after creating this `mailer` object we send it to our `email provider`(API that will automatically send the emails to the list of people that we need to send the `survey`).
+
+To dive a little bit on the `email provider` process; we gonna take all the `recipients` that are included inside of the `survey` and create one single `mailer` then send that `mailer` object to our `email provider` in a single network request then we leave to our `email provider` how is going to handle the sending the `email` to each individual `recipient`.
+
+The approach that talks in the previews paragraph will create an issue in our application. First, remember that for any given `email` we going to have an `email template` that is going to create the structure of the `email` like the subject and links that the `user` can click so if we are creating one `mailer` object to each `recipient` they all going to receive the same exact `email` including the links this will make us difficult to know which `recipient` one of our links in the `survey`(These links are important because we are gonna use it to know if a given `user` response our `survey` previously. We work on it in the `Recipients` model). To handle this issue we going to use our `email provider` at this case we going to use [Sendgrid](https://sendgrid.com/); that whenever we use `Sendgrid` to send a mail to one of our `users` automatically behind the scene it will look at the body of the `email` to see if there are links and if it finds a link it will change that to a custom link that sends it to their `Sendgrid` servers to collect metrics of the different links that the `user` is clicking then it will send then to the actual destination of the link. Also `Sengdrid` put in it custom link a `token` that uniquely identifies each `user` so `Sendgrid` know the actual `user` that click a link so at the moment that a `user` click on one of that custom links `Sendgrid` will send a message to our server telling us a link is clicked; this was the link and here is some information about the `user` that click that link. This last step that we mention refers to as a `webhook` that is anything that outside API facilitates a process and gives our application some kind of callback or a little notice that some event just occurs.
+
+### Setup Sengrid
+
+- First, need to create your `Sendgrid` account [here](https://signup.sendgrid.com/)
+- Fill the form with your personal and company information; if you are using the account just for testing put your name as the company
+- Verify your account with the `email` that `Sendgrid` send you
+- Now on the option called `Single sender` click on the `Single server verification`
+- Fill the form and if you are using this for testing you can put your name as a company name
+- Verify the `email sender`
+- Then on the `dashboard`, you're going to see a banner that said `send your first email`; open it options
+- Click on the `start` button of the `integrate using web API or SMTP relay` section
+- Then click on the `choose` button on the `Web api` section
+- Choose `Node.js`
+- Add a name for your `api key` in the `my first api key name` input
+- Click on the `Create key` button
+- Copy your key and store it in a save place
+- Now create a new project on your local machine
+- Inside of the root directory create a `package.json` file using: `npm init`
+- Install as a `dev` dependency `@sendgrid/mail` package
+  `npm install --save @sendgrid/mail`
+- Create a new file on your root directory call `test.js`
+- Copy the `Send your first email` snippet of code that is on the `Sendgrid` page
+- Add on the `line 4` your `Sendgrid` api key
+  `sgMail.setApiKey("SG.my.api.key");`
+- Change the `line 6` to an email that you can access
+- Change the `line 7` to the email that you verify as a sender on the `Sendgrid` page
+- Go to the `Sendgrid` page and check the `I've integrated the code above` to continue with the process
+- Then click on the `Next: Verify Integration` button
+- Now on your local terminal go to the project that you create with the snippet of code that you created before
+- Run the script using: `node test.js`
+- Check that you receive an `email` on the mail that you use on the `line 6`
+- If you successfully have the `email` go back to the `Sendgrid` page
+- Click on the `Verify integration` button
+- You should see a success message
+- Now we can add our `Sendgrid` key to the project. Go to the `dev.js` in the `server/config` directory and add a new property call `sendGridKey` with your key
+  `sendGridKey: "SG.your.api.key"`
+- Then go to the `prod.js` file in the same directory and add the `sendGridKey` with the `Heroku` evn variable as it value
+  `sendGridKey: process.env.SEND_GRID_KEY`
+- Go to your `Heroku` dashboard and choose the project of this application
+- Click on `settings`
+- Then click on the `show config vars` button
+- Add the `SEND_GRID_KEY` with your `Sendgrid` api key as it value
+- Click on the `add` button
+- Now finally on your terminal go to the `server` directory and install the `Sendgrid` dependency
+  `npm install --save sendgrid`
+
+### Mailer Setup
+
+To set up the `mailer` object we are gonna use a `class` that will have a set of properties that are going to help us to create and send the `email`. At this case we will have a property that calls the `subject` that as you may know will be the `subject` of the `email` also a `recipients` property that will tell all the `emails` that we will send our `email`; those properties we already have the information in our `survey` instance. Next, we will have the `body` property that has the actual text of the `email` and at this moment the `email template`(provide the actual `HTML` body of the `email`) enters in action; where we pass one or two properties from the `survey` model and the `template` will produce some `HTML` that will be the actual `body` of the `email`. Finally, we have a `from_email` property is the `email` address that we are gonna put in the `from` field of the `email`.
+
+After defining our `mailer` object we are gonna call a function that goes by the name `toJson()` that takes all the different configuration that we did on the `mailer` object and transform it on a `JSON` data and finally send it to `SendGrid`.
+
+#### Steps to build the Mailer
+
+- On the `server/services` directory create a file call `Mailer.js`
+- Inside of the `Mailer.js` file import the `Sendgrid` module
+  `const sendgrid = require("sendgrid");`
+- Then create an object call `helper` with `sendgrid.mail` as it value
+  `const helper = sendgrid.mail;`
+
+  We can use `ES6` to export directly the `mail` object from the `SendGrid` module but on the `SendGrid` documentation they call this object `helper` so we will follow its combination.
+
+- Then require the `keys` of the project
+  `const keys = require("../config/keys");`
+- Now create a `class` call `Mailer` that extend from `helper.mail`
+  `class Mailer extends helper.Mail {}`
+- Then we need to create a `constructor` that is the first function that is gonna be called when a new instance of the `Mailer` class is created
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor() {}
+  }
+  ```
+
+- Now we need to define the arguments that are gonna be in the constructor that are the same provide as arguments when we use the `new` keyword when we create an instance of a class. At this time we are gonna receive an `object` with a `subject` and `recipients` properties and a second argument with the `content`(template) of the mail.
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor({ subject, recipients }, content) {}
+  }
+  ```
+
+We did it this way so we can reuse the `Mailer` class for other types of emails, not just a `survey` email
+
+- Now we make sure that any `constructor` in the `Mailer` class get call using the `super` function
+
+  ```js
+  class Mailer extends helper.Mail {
+  constructor({ subject, recipients }, content) {
+    super();
+  }
+  ```
+
+- Then we need to create a property that is called `from_email` that will represent the `from` information of the email. Make sure that you put the email that is specified as a `sender` on the `Sendgrid` page
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor({ subject, recipients }, content) {
+      super();
+
+      this.from_email = new helper.Email("your_email@example.com");
+    }
+  }
+  ```
+
+- The next property is the `subject` and `body` that will receive the information from the parameter that receive the `constructor`
+
+  ```js
+  class Mailer extends helper.Mail {
+    constructor({ subject, recipients }, content) {
+      super();
+
+      this.from_email = new helper.Email("your_email@example.com");
+      this.subject = subject;
+      this.body = new helper.Content("text/html", content);
+    }
+  }
+  ```
+
+  On the `body` property we use the `helper.Content` function to specify we are going to use `text/html` as it content
+
+- At this moment we still missing the `recipients` property but before that we create it we need to have some amount of logic to process the data that we receive as a parameter so we are going to create a `formatAddresses` function that receive the `recipients` parameter and return the result of using a `map` function with the `recipients` and the `helper.Email` function
+
+  ```js
+  formatAddresses(recipients) {
+    return recipients.map(({ email }) => {
+      return new helper.Email(email);
+    });
+  }
+  ```
+
+- Now you can create the `recipients` property
+
+  ```js
+  constructor({ subject, recipients }, content) {
+    super();
+
+    this.from_email = new helper.Email(keys.senderEmail);
+    this.subject = subject;
+    this.body = new helper.Content("text/html", content);
+    this.recipients = this.formatAddresses(recipients);
+  }
+  ```
+
+- We need to add the `body` to the actual content of the mail using a function of the `helper.Mail` class call `addContent`
+  `this.addContent(this.body);`
+- Now we need to enable the `link tracking` of our email(Remember that we need to keep track of the links that are press) that will tell `Sendgrid` to scan the email and replace all links with their custom links so we will create a function call `addClicktracking`
+
+  ```js
+  addClickTracking() {
+    const trackingSettings = new helper.TrackingSettings();
+    const clickTracking = new helper.ClickTracking(true, true);
+
+    trackingSettings.setClickTracking(clickTracking);
+    this.addTrackingSettings(trackingSettings);
+  }
+  ```
+
+  This is the configuration that they provide on its documentation
+
+- Use the `addClickTracking` on the `constructor`
+  `this.addClickTracking();`
+- Now we need to add a fuction to take and process the list of `recipients`
+
+  ```js
+  addRecipients() {
+    const personalize = new helper.Personalization();
+
+    this.recipients.forEach((recipients) => {
+      personalize.addTo(recipients);
+    });
+    this.addPersonalization(personalize);
+  }
+  ```
+
+  This is also the way `Sendgrid` documentation shows us to add the `recipients`
+
+- Now call the `addRecipients` function on the constructor
+  `this.addRecipients();`
+
+- Finally we create our last property call `sgApi` that will be the representation of the `Sendgrid` library. We need to send our `Sendgrid` secret key
+  `this.sgApi = sendgrid(keys.sendGridKey);`
+
+- Now we need to create a function that actually send the email
+
+  ```js
+  async send() {
+    const request = this.sgApi.emptyRequest({
+      method: "POST",
+      path: "/v3/mail/send",
+      body: this.toJSON(),
+    });
+
+    const response = await this.sgApi.API(request);
+    return response;
+  }
+  ```
+
+#### Mailer in use
+
+Now that we got the `mailer` we can begin to do a basic implementation of it.
+
+- First in the `surveyRoute` file import the `Mailer` class
+  `const Mailer = require("../services/Mailer");`
+- Now we need to create the `template` function that we going to send to the `Mailer` so on the `services` directory create a folder call `emailTemplate`
+- Inside of the new directory create a file call `surveyTemplate.js`
+- Inside of the `surveyTemplate.js` export a function that recive a the `survey` instance
+  `module.exports = (survey) => {}`
+- Now return a string with the `survey` body
+
+  ```js
+  module.exports = (survey) => {
+    return `<div>${survey.body}</div>`;
+  };
+  ```
+
+- Then import the `surveyTemplate` in the `surveyRoute` file
+  `const surveyTemplate = require("../services/emailTemplates/surveyTemplate");`
+- Now bellow the `survey` instance create a new `Mailer` instance sending the `survey` object and the `surveyTemplate` function with a `survey` as it parameter as a `class` configuration
+  `const mailer = new Mailer(survey, surveyTemplate(survey));`
+- Finally, we can test the `Mailer` class. First; bellow of the `mailer` object that you just created called the `send` method that we create before in the `Mailer` class
+  `mailer.send();`
+- Since we need to be logged in and have credits to test the route we are gonna take advantage of the `session` on the browser; to do this first we need to go to the `index.js` in the `client/src` directory and import the `axios` library
+  `import axios from "axios";`
+- Then create a property called `axios` on the `windows` object that contains the `axios` object that you imported
+  `window.axios = axios;`
+- Run the local `servers`
+- Login in the application(make sure that the account have credits)
+- Open the browser's `console`
+- Create a `survey` object with all the properties that it needs to send an email
+
+  ```js
+  const survey = {
+    title: "my title",
+    subject: "my subject",
+    recipients: "valid.email@example.com",
+    body: "here is the body of the email",
+  };
+  ```
+
+- Now call the `post` function from `axios` with the `/api/survey` endpoint and the `survey` object that you created
+  `axios.post('/api/surveys', survey);`
+- The request will be pending because we don't create a `response` on the `route handler` yet but you should receive an `email` in the mail that you specify as `recipient` in the `recipients` property
+
+### Improving the Email template
+
+At this moment we can at a little more detail on the content of the `email`. We don't gonna make a lot of improvement so feel free to add more styling to this section.
+
+Go to the `surveyTemplate.js` file in the `services/emailTemplates` directory and place the following code
+
+```js
+module.exports = (survey) => {
+  return `
+    <html>
+        <body>
+            <div style="text-align: center;">
+                <h3>I'd like your input</h3>
+                <p>Please answer the following question:</p>
+                <p>${survey.body}</p>
+                <div>
+                    <a href="http://localhost:3000">Yes</a>
+                </div>
+                <div>
+                    <a href="http://localhost:3000">No</a>
+                </div>
+            </div>
+        </body>
+    </html>
+  `;
+};
+```
+
+Later we will update the `anchor` tag to redirect to the correct place. Now you can follow the same process that you use before to send an `email` and you should see the update on the body of the `email` and if you take a look at the `anchors` that are on the `email` you will see that `Sengrid` update the `href` as we mentioned before.
+
+### Save the survey and update the user
+
+Now that we test the `Mailer` class we can continue working with the `surveyRoute`. At this moment we need to `save` the `survey` and subtract one `credit` from the user that sent the `survey` so we need to follow the next steps
+
+- On the `surveryRoute` file sice some operations that we are going to do are `asynchronous` we need to put the `async` keyword on the `handler` arorw function
+  `app.post("/api/surveys", requireLogin, requireCredits, async (req, res) => {..}`
+- Now after the creation of the `mailer` object we `send` the `email` but you need to wait that this operation finishes so we need to add the `await` keyword to it
+  `await mailer.send();`
+- Then we need to `save` the `survey` in our database so we use the `save` function and add the `await` keyword to it
+  `await survey.save();`
+- After saving the `survey` we need to subtract 1 `credit` from the current `user` that we have on the `req` object
+  `req.user.credits -= 1;`
+- Then we `save` the updated `user` to our database and from now we use the object that the `save` function returns as our updated `user`
+  `const user = await req.user.save();`
+- Now we can send the updated `user` on the respond
+  `res.send(user);`
+- Finally, we need to add a `try/catch` block to handle the `errors` that can occur on those operations and if we have an error we send a `422` status(`Unprocessable Entity`) with the error as a response to the `user`
+
+  ```js
+  try {
+    await mailer.send();
+    await survey.save();
+    req.user.credits -= 1;
+    const user = await req.user.save();
+
+    res.send(user);
+  } catch (err) {
+    res.status(422).send(err);
+  }
+  ```
+
+Now you can test again sending an `email` and on the `network` tag of the browser see the response of the `survey` request and you can go to your `Sendgrid` account and on the `Activity` section on your dashboard, you can see the information that `Sendgrid` get about the emails that you send.
+
+### Feedback for the user
+
+If you notice we still have our local URL in the links of the `body` on the `email`; this is fine when we are working locally but we need a way to specify the environment that we need and it a little weird for our users that we send then to the front page of our application after they click the link of the `email` so we will add a new simple `route` to let then know that they actually are voting for in a `survey`
+
+- First, go to the `dev.js` file in the `server/config` directory
+- Add a new property call `redirectDomain` with the local URL of our application
+  `redirectDomain: "http://localhost:3000"`
+- Now got to the `prod.js` file in the same directory and add the same property with the `Heroku` environment variable
+  `redirectDomain: process.env.REDIRECT_DOMAIN`
+- Now go to `Heroku` and add the `REDIRECT_DOMAIN`(we follow that process before) with the URL of your `Heroku` app
+- Then go to the `surveyRoute` and add the following `route handler`
+
+  ```js
+  app.get("/api/surveys/thanks", (req, res) => {
+    res.send("Thanks for voting!");
+  });
+  ```
+
+- Go to the `surveyTemplate` file on the `services/emailTemplate`
+- Require the `keys` file
+  `const keys = require("../../config/keys");`
+- Finally on both anchor tags add the following url
+  `href="${keys.redirectDomain}/api/surveys/thanks"`
