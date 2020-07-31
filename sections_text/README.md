@@ -2785,3 +2785,24 @@ If you notice we still have our local URL in the links of the `body` on the `ema
   `const keys = require("../../config/keys");`
 - Finally on both anchor tags add the following url
   `href="${keys.redirectDomain}/api/surveys/thanks"`
+
+## Section 11: Survey on the client
+
+We can continue working on the `route handlers` that still need to do in order to complete the `survey` task on the backend of our application but is a good moment to add in the client a way to add the `survey` that will help us to have a more clear view on the `survey` task that we are working. To create the `survey` on the client we will use a `form`; this `form` will have it own `route` and we can get to this `route` by a button on the `dashboard` page so this means that we will begin to work with this button on the `dashboard` page.
+
+- Go to the `client/src/components` directory and create a file call `Dashboard.js`
+- Then create a `Dashboard` component with some text to test and `export` it
+
+  ```js
+  import React from "react";
+
+  const Dashboard = () => {
+    return <div>Dashboard</div>;
+  };
+
+  export default Dashboard;
+  ```
+
+- Now go to the `App.js` file and `import` the new `Dashboard` component
+  `import Dashboard from "./Dashboard";`
+- Delete the example `Dashboard` function
