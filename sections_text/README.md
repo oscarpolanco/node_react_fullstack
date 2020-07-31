@@ -2698,3 +2698,33 @@ Now that we got the `mailer` we can begin to do a basic implementation of it.
 - Now call the `post` function from `axios` with the `/api/survey` endpoint and the `survey` object that you created
   `axios.post('/api/surveys', survey);`
 - The request will be pending because we don't create a `response` on the `route handler` yet but you should receive an `email` in the mail that you specify as `recipient` in the `recipients` property
+
+### Improving the Email template
+
+At this moment we can at a little more detail on the content of the `email`. We don't gonna make a lot of improvement so feel free to add more styling to this section.
+
+Go to the `surveyTemplate.js` file in the `services/emailTemplates` directory and place the following code
+
+```js
+module.exports = (survey) => {
+  return `
+    <html>
+        <body>
+            <div style="text-align: center;">
+                <h3>I'd like your input</h3>
+                <p>Please answer the following question:</p>
+                <p>${survey.body}</p>
+                <div>
+                    <a href="http://localhost:3000">Yes</a>
+                </div>
+                <div>
+                    <a href="http://localhost:3000">No</a>
+                </div>
+            </div>
+        </body>
+    </html>
+  `;
+};
+```
+
+Later we will update the `anchor` tag to redirect to the correct place. Now you can follow the same process that you use before to send an `email` and you should see the update on the body of the `email` and if you take a look at the `anchors` that are on the `email` you will see that `Sengrid` update the `href` as we mentioned before.
