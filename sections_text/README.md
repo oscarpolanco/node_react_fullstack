@@ -2846,3 +2846,54 @@ We can continue working on the `route handlers` that still need to do in order t
     );
   };
   ```
+
+### SurveyNew form
+
+Before we begin to work on the `survey` form we need to speak a little bit about what will be the process that the `user` is going to follow when he creates a `survey` and wants to send it.
+
+The overall form component that we are going to use is gonna be called `SurveyNew` in other words that will be our container component then the actual fields, labels and all that is part of the form are going to be called `SurveyForm` and each individual field are going to be called `SurveyField`. We separate the form on this components because we got some amount of logic that will be complex because when the `user` enter the information of the `survey` on the form might accidentally make a mistake somewhere in the form we will give then the opportunity of review the information that they fill on the inputs instead of sending the email immediately so we will have another component called `SurveyFormReview` and they will have the change to go back to the form or send the `survey`; so this will create some complexity on our task.
+
+As you see we have a lot of components that we will use on the form and some of then will need to share the information that the `user` supply in the form in other words we got a `SurveyNew` that is the father of all the components; a `SurveyForm` that is the father of multiples `SurveyField` and a `SurveyReviewForm` that doesn't have children and is sibling of the `SurveyForm`; knowing this we will have information on the multiple `SurveyField` that we will need to have on the `SurveyReviewForm` after the `user` click on a `submit` button so we need some way to make that information available on multiple components; if we just use `react` we will need to store all the data in the neartest comun parent in this case `SurveyNew` and send the input data as `props` in the `SurveyFormReview` but we already have a library that can help us to share this data between components that is `Redux` so we will have an `action creator` that is call on typing the inputs that update the `Redux store` and we just need to use `connect` to pull data from `Redux` in the `SurveyForReview` but actually we can save more coding time using another library that will preform all the `Redux` process actumoaclly that is call `Redux form`. So we will have `Redux` that create a `store` that is where all the data live inside of our application and we modify this data with the use of our `reducers` in our form case we will have a `formReducer` that is managed entirely by `Redux form` and it records all the values from our form automatically.
+
+### Redux form setup
+
+Now that we just spoke about the process and the tools involved with the `survey` form is a good time, to begin with, the setup
+
+- First, we need to install the `Redux form` library. On your terminal go to the `client` directory use this command
+  `npm install --save redux-form`
+- Then on your editor go to the `reducers` directory to the `index.js` file
+- Import the built-in `reducer` that `Redux form` create for us
+  `import { reducer as reduxForm } from "redux-form";`
+
+  For the convention, we rename the `reducer` to another name because the `reducer` name will be confusing to understand its purpose
+
+- Then we need to add the `form` key with the `reduxForm` reducer in our `combineReducers`
+
+  ```js
+  export default combineReducers({
+    auth: authReducer,
+    form: reduxForm,
+  });
+  ```
+
+  We need to add the `form` key because `Redux form` will expect that the values produced by the `reduxForm` reducer will be in this key
+
+- At this point, we are ready to work on our form so we will begin to create the components that we need. On the `components` directory create a new folder call `surveys`
+- Inside on the `surveys` directory create a file call `SurveyNew.js`
+- In this new file create a `class` base component with some example text and export it
+
+  ```js
+  import React, { Component } from "react";
+
+  class SurveyNew extends Component {
+    render() {
+      return <div>SurveyNew!</div>;
+    }
+  }
+
+  export default SurveyNew;
+  ```
+
+- Now you can go to the `App.js` file and import the `SurveyNew` component
+  `import SurveyNew from "./surveys/SurveyNew";`
+- Delete the `SurveyNew` example function
