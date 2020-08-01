@@ -2944,3 +2944,80 @@ At this moment we can begin to create our `form` component and use it on `Survey
   ```
 
   We gonna talk a little bit more about the configuration object that we use here
+
+### Redux form in practice
+
+At this moment we will add some fields in the `SurveyForm` instead of creating the `SurveyField` component to see a little bit of `redux-form` in practice.
+
+- On the `SurveyForm` search the import statement of the `reduxForm` helper and import the `Field` component
+  `import { reduxForm, Field } from "redux-form";`
+
+  The `Field` component will help us to render absolutlly any type of traditional `HTML` form elements
+
+- Now we can use it on the `return` statement in the `render` function
+
+  ```js
+  class SurveyForm extends Component {
+    render() {
+      return (
+        <div>
+          <Field type="text" name="surveyTitle" component="input" />
+        </div>
+      );
+    }
+  }
+  ```
+
+  The `Field` component can't be use by itself so we need to add certain `props` to it in order to render in the page
+
+  - `type=text`: Specify the `type` of the element that we are gonna render in this case a input type text
+  - `name="surveyTitle"`: The `name` property tells `redux-form` that we have on piece of data been produce by our form call `surveyTitle` in this case and you can be any string of your choosing. So when a `user` type on this field `redux-form` will take the value of that input and is gonna store it in our `redux` store by the key call `surveyTitle` in this case
+  - `component="input"`: Tells the field component how is gonna be render; in this case will be render as a `HTML` input tag. We can send a component to this property instead of a `string`
+
+- Now we need some way of `submit` the information of the `input` that we create so we gonna add that `input` inside of a `form` tag
+
+  ```js
+  return (
+      <div>
+        <form>
+          <Field type="text" name="surveyTitle" component="input" />
+        </form>
+      </div>
+    );
+  }
+  ```
+
+- Next we need to add a `onSubmit` prop to the `form` tag with the value that we show here
+
+  ```js
+  return (
+      <div>
+        <form onSubmit={this.props.handleSubmit((value) => console.log(value))}>
+          <Field type="text" name="surveyTitle" component="input" />
+        </form>
+      </div>
+    );
+  }
+  ```
+
+  The `handleSubmit` prop is a function that is provided automaclly by our `reduxForm` helper and when we call `handlerSubmit` and pass a function of our own this function will be call when the `user` submit the form
+
+- Now add a button to `submit` the form
+
+  ```js
+  return (
+      <div>
+        <form onSubmit={this.props.handleSubmit((value) => console.log(value))}>
+          <Field type="text" name="surveyTitle" component="input" />
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    );
+  }
+  ```
+
+- Then you can run de app and go to the `survey/new` page
+- Type something on the `input` field
+- Open the browser console
+- Click on the `submit` button
+- You should see the data that you type on the `input` in an object with a key call `surveyTitle`
