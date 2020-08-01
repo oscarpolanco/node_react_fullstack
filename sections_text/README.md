@@ -2897,3 +2897,50 @@ Now that we just spoke about the process and the tools involved with the `survey
 - Now you can go to the `App.js` file and import the `SurveyNew` component
   `import SurveyNew from "./surveys/SurveyNew";`
 - Delete the `SurveyNew` example function
+
+### ReduxForm helper
+
+At this moment we can begin to create our `form` component and use it on `SurveyNew` using `redux-form`
+
+- First, create a new file call `SurveyForm.js` in the `components/surveys` directory
+- Inside of the `SurveyForm` file create and export a class base component
+
+  ```js
+  import React, { Component } from "react";
+
+  class SurveyForm extends Component {
+    render() {
+      return <div>SurveyForm!</div>;
+    }
+  }
+
+  export default SurveyForm;
+  ```
+
+- Go to the `SurveyNew` component and import the `SurveyForm` component
+  `import SurveyForm from "./SurveyForm";`
+- Use the `SurveyForm` component inside of the `div` in the `return` statement in the `render` function
+
+  ```js
+  class SurveyNew extends Component {
+    render() {
+      return (
+        <div>
+          <SurveyForm />
+        </div>
+      );
+    }
+  }
+  ```
+
+- Now we can begin to hook the `SurveyForm` to the `redux-form` library so first, we will call a helper that will tell `redux-from` to take control of any `form` in the component called `reduxForm`
+  `import { reduxForm } from "redux-form";`
+- Using the `reduxForm` helper we now have access to the `redux store` and is a lot like the `connect` function that we use before in the implementation. Now on the export statement use the `reduxForm` helper like this
+
+  ```js
+  export default reduxForm({
+    form: "surveyForm",
+  })(SurveyForm);
+  ```
+
+  We gonna talk a little bit more about the configuration object that we use here
