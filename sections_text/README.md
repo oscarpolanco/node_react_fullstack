@@ -3021,3 +3021,55 @@ At this moment we will add some fields in the `SurveyForm` instead of creating t
 - Open the browser console
 - Click on the `submit` button
 - You should see the data that you type on the `input` in an object with a key call `surveyTitle`
+
+### Custom field component
+
+Now that we have a better idea on how `redux-form` is gonna help us we can begin to create the `SurveyField` component for our custom field to have some amount of code that we can re-use on the different `inputs` and `label` that we are going to use in our form.
+
+- On your editor go to the `components/survey` directory
+- Create a new file call `SuveryField.js`
+- Create and export a functional component that returns an input
+
+  ```js
+  import React from "react";
+
+  export default () => {
+    return (
+      <div>
+        <input />
+      </div>
+    );
+  };
+  ```
+
+- Go to the `SurveyField` component and import the component that you just created
+  `import SurveyField from "./SurveyField";`
+- Delete the `Field` component that we create
+- Create a function call `renderFields` inside of the `SurveyForm` calls that returns the `Field` component with the `type=text`; for now the `name=title` and on the `components` props use the `SurveryField` component
+
+  ```js
+  renderFields() {
+    return (
+      <div>
+        <Field type="text" name="title" component={SurveyField} />
+      </div>
+    );
+  }
+  ```
+
+- Use the `renderFields` function on the same place that we have the first `Field` that we add before
+
+  ```js
+  render() {
+    return (
+      <div>
+        <form onSubmit={this.props.handleSubmit((value) => console.log(value))}>
+          {this.renderFields()}
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    );
+  }
+  ```
+
+- Test on your local and you should see the same result that the preview example without the submit data
