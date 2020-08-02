@@ -3101,3 +3101,30 @@ Now that we have a better idea on how `redux-form` is gonna help us we can begin
   ```
 
 - Now test on your browser and submit the data. You should see an object with the information in the browser's console
+- If you see the spected result we can continue building our `SurveyField` component. Each `input` will have an individual `labels` that represent then so we need to add a new `prop` on our `SurveyField` compoenent call `label`
+  `export default ({ input, label }) => {...}`
+- Now add a `label` tag and use the `label` prop
+
+  ```js
+  return (
+    <div>
+      <label>{label}</label>
+      <input {...input} />
+    </div>
+  );
+  ```
+
+- Then go to the `SurveyForm` component and on the `Field` component add a new prop call `label` with the information that you want
+
+  ```js
+  <Field
+    label="Survey Title"
+    type="text"
+    name="title"
+    component={SurveyField}
+  />
+  ```
+
+  By default each property that you add to the `Field` component will be send to our `SurveyField` component
+
+- Now test on your borwser that the `label` exist

@@ -1,9 +1,9 @@
 import React from "react";
 
-export default ({ input }) => {
-  console.log(input);
+export default ({ input, label }) => {
   return (
     <div>
+      <label>{label}</label>
       <input {...input} />
     </div>
   );
