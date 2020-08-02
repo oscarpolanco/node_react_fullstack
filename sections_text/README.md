@@ -3101,7 +3101,7 @@ Now that we have a better idea on how `redux-form` is gonna help us we can begin
   ```
 
 - Now test on your browser and submit the data. You should see an object with the information in the browser's console
-- If you see the spected result we can continue building our `SurveyField` component. Each `input` will have an individual `labels` that represent then so we need to add a new `prop` on our `SurveyField` compoenent call `label`
+- If you see the expected result we can continue building our `SurveyField` component. Each `input` will have an individual `labels` that represent then so we need to add a new `prop` on our `SurveyField` component call `label`
   `export default ({ input, label }) => {...}`
 - Now add a `label` tag and use the `label` prop
 
@@ -3125,6 +3125,41 @@ Now that we have a better idea on how `redux-form` is gonna help us we can begin
   />
   ```
 
-  By default each property that you add to the `Field` component will be send to our `SurveyField` component
+  By default, each property that you add to the `Field` component will be sent to our `SurveyField` component
 
-- Now test on your borwser that the `label` exist
+- Now test on your browser that the `label` exist
+- Then we need to add the other `fields` for our form. For this purpose, we gonna use the `map` function from `lodash` so go to your terminal and on the `client` directory install the `lodash` package
+  `npm install --save lodash`
+- On your editor go to the `SurveyForm` and import the `lodash` module
+  `import _ from "lodash";`
+- Now we need to create an `array` with the properties that repeat itself on each `Field` component that we need
+
+  ```js
+  const FIELDS = [
+    { label: "Survey Title", name: "title" },
+    { label: "Subject Line", name: "subject" },
+    { label: "Email body", name: "body" },
+    { label: "Recipient list", name: "emails" },
+  ];
+  ```
+
+- Go to the `renderFields` helper function and remove the current `Field` component
+- Use the `map` function from `lodash` to loop throw the `FIELDS array`
+
+  ```js
+  renderFields() {
+    return _.map(FIELDS, ({ label, name }) => {
+      return (
+        <Field
+          key={name}
+          component={SurveyField}
+          type="text"
+          label={label}
+          name={name}
+        />
+      );
+    });
+  }
+  ```
+
+- Go to your browser and test all `fields`
