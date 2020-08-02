@@ -3163,3 +3163,31 @@ Now that we have a better idea on how `redux-form` is gonna help us we can begin
   ```
 
 - Go to your browser and test all `fields`
+
+### Add buttons with style
+
+Like we mentioned before the `submit` button that we have actually is not going to `submit` the `survey` that we just created with the form instead is going to a review page so the `user` can do the last check on the information that he is going to `submit`. With this, we can begin to work a little bit on the looks of the button.
+
+Also, we are going to have a `cancel` button on the form to get back to the `dashboard` page
+
+- On your editor go to the `SurveyForm` component
+- Import the `Link` component from `react-router-dom`
+  `import { Link } from "react-router-dom";`
+- Add a `Link` before the `submit` button with the following classes and message
+
+  ```js
+  <Link to="/surveys" className="red btn-flat white-text">
+    Cancel
+  </Link>
+  ```
+
+- Now update the `submit` button like this
+
+  ```js
+  <button type="submit" className="teal btn-flat right white-text">
+    Next
+    <i className="material-icons right">done</i>
+  </button>
+  ```
+
+- Test on the browser the buttons
