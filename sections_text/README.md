@@ -3236,3 +3236,44 @@ We got almost complete our form but is still missing one of the important parts 
     return errors;
   }
   ```
+
+#### Showing validation errors
+
+At this moment have our first validation rule but we still not show it to the `user` in the browser. We can begin the process to show it on the browser.
+
+When you add the `title` property in the `errors` object `redux-form` automatically associate that `error` with the field that has the same name in this case `title` and we can access to it in the `meta` object that `redux-form` send you to the `surveyField` component.
+
+- First, on your editor go to the `surveyField` component add `meta` as a prop of the component and `console.log` it value
+
+  ```js
+  export default ({ input, label, meta }) => {
+    console.log(meta);
+    return (
+      <div>
+        <label>{label}</label>
+        <input {...input} />
+      </div>
+    );
+  };
+  ```
+
+- Go to your browser and submit the form
+- Check on the console and on the first log check the object and you should see an `error` property with the message that you create in the `validate` function before
+- Now add delete the `console.log`
+- Update the `meta` parameter so we can use destructuring to it
+  `export default ({ input, label, meta: { error, touched } }) => {...};`
+- Add the `error` bellow the `input` always asking if `touched` is `true`
+
+  ```js
+  export default ({ input, label, meta: { error, touched } }) => {
+    return (
+      <div>
+        <label>{label}</label>
+        <input {...input} />
+        {touched && error}
+      </div>
+    );
+  };
+  ```
+
+  The `touched` property of the `meta` object has a value of `true` after the `user` touch the input and we will use it to present the `error` because if we don't at it the `error` will show even the `user` doesn't use the input
