@@ -3191,3 +3191,48 @@ Also, we are going to have a `cancel` button on the form to get back to the `das
   ```
 
 - Test on the browser the buttons
+
+### Form validation
+
+We got almost complete our form but is still missing one of the important parts of a form that is the `validation` to prevent the `user` to submit the incorrect data values.
+
+- On your editor go to the `surveyForm` component
+- Add the following property to the `reduxForm` configuration object
+
+  ```js
+  export default reduxForm({
+    validate,
+    form: "surveyForm",
+  })(SurveyForm);
+  ```
+
+  If we passed a function on the key `validate` that function will run anytime that a `user` wants to submit the form so we can use it to validate the data of the form and provide feedback to the `user`.
+
+- Now before of the export statement create a function call `validate` and recive `values` as a parameter
+  `function validate(values) {}`
+
+  The `values` parameter is automatically passed by `redux-form` to the `validate` function containing the values relate to the form that the user is attending to `submit`
+
+- Next, we need to return an object that `redux-form` will check if is empty `redux-form` assume that the form is valid and continue with the `submit` process but is have some property will consider that the form is invalid
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    return errors;
+  }
+  ```
+
+- Now we can add our first validation rule. Add a condition that checks if the `title` property of the `values` object exists and if don't exist add the `title` property with a string with an error message
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    if (!values.title) {
+      errors.title = "You must provide a title";
+    }
+
+    return errors;
+  }
+  ```
