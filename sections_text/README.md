@@ -3277,3 +3277,39 @@ When you add the `title` property in the `errors` object `redux-form` automatica
   ```
 
   The `touched` property of the `meta` object has a value of `true` after the `user` touch the input and we will use it to present the `error` because if we don't at it the `error` will show even the `user` doesn't use the input
+
+- Now we can continue adding the validation of the other inputs and some styling. On the `surveyField` component add the following code to have a better experience when you see the `error`
+
+  ```js
+  export default ({ input, label, meta: { error, touched } }) => {
+    return (
+      <div>
+        <label>{label}</label>
+        <input {...input} style={{ marginBottom: "5px" }} />
+        <div className="red-text" style={{ marginBottom: "20px" }}>
+          {touched && error}
+        </div>
+      </div>
+    );
+  };
+  ```
+
+- Then go to the `SurveyForm` component and update the condition of the `validate` function with the following code
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    _.each(FIELDS, ({ name }) => {
+      if (!values[name]) {
+        errors[name] = "You must provide a value";
+      }
+    });
+
+    return errors;
+  }
+  ```
+
+  At this case we are going to use the `FIELDS` object and use the `name` to know with `value` that we want to check and to add it to the `error` object if is needed
+
+- Test on the browser and you should see an error on every `input` when you try to `submit` or `touch` the `input` and don't add text
