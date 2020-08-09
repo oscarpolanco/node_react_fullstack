@@ -3313,3 +3313,53 @@ When you add the `title` property in the `errors` object `redux-form` automatica
   At this case we are going to use the `FIELDS` object and use the `name` to know with `value` that we want to check and to add it to the `error` object if is needed
 
 - Test on the browser and you should see an error on every `input` when you try to `submit` or `touch` the `input` and don't add text
+- We now need a special kind of validation for the `recipients` input because the `user` will have to enter the `emails` with a specific parterm and separate each one with a comma and space so this mean we need to add another piece of logic that handle all this. First we need to create a new function to store all this logic so we need to create a new directory call `utils` in the `src` folder
+- Inside of the new directory add a file call `validateEmails.js`
+- Now create a export a function that recibe `emails` as a parameter
+  `export default (emails) => {}`
+- Then we need to `split` every `email` and eliminate the extra `space` that they have
+  `const invalidEmails = emails.split(",").map((email) => email.trim());`
+- We need now to `test` if an `email` is valid and to do this we are gonna use a [regular expresion](https://en.wikipedia.org/wiki/Regular_expression). To obtain this `regular expression` on your browser go to the [emailregex](http://emailregex.com/) page
+- Scroll down and find the `Javascript`; then copy the `regular expression`
+- Go to the `validateEmails` file and on the top of the file create a variable call `re` and use the `regular expression` that you just copy as it value
+  `const re = your_js_regular_expretion`
+- Now that we separate and remove the spaces of the `emails` we need to `filter` to find the invalid `emails` on the array using the `test` function return just the invalid `emails`
+
+  ```js
+  const invalidEmails = emails
+    .split(",")
+    .map((email) => email.trim())
+    .filter((email) => {
+      if (email.length) return re.test(email) === false;
+    });
+  ```
+
+- Then create a condition that checks if `invalidEmails` have a `length` and if it does you will add a message and the invalid `emails`
+
+  ```js
+  if (invalidEmails.length) {
+    return `These emails are invalid: ${invalidEmails}`;
+  }
+  ```
+
+- Go to the `SurveryForm` component and import the `validateEmails` function
+  `import validateEmails from "../../utils/validateEmails";`
+- On the `validate` function before the condition call the `validationEmails` adding it value to the `emails` property of the `error` object
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    errors.emails = validateEmails(values.emails || "");
+
+    _.each(FIELDS, ({ name }) => {
+      if (!values[name]) {
+        errors[name] = "You must provide a value";
+      }
+    });
+
+    return errors;
+  }
+  ```
+
+  We add an empty string when we call the `validateEmails` function because when we render the page the validations will run and `values.emails` will be `undefined`. Also, it's important that we put the `error.emails` before the `empty` validation because it will override the validations of the `email` checking
