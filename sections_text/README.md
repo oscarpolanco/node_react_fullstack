@@ -3372,10 +3372,10 @@ We got a couple of options that we can use to toggle between the 2 views. First,
 
 On a little side note, we mention that we are gonna use a component level `state` for the `toggle` task but maybe you are asking why a component level `state`? if we got `Redux` to manage all the `state` of the application. This is because this particular `state` will be used only in one component and there will not have any other component that cares about this particular `state`.
 
-#### Adding the toogle state and use it
+#### Adding the toggle state and use it
 
-- First on the `survey` directory create a new file call `SurveyFormReview.js`
-- On this new file build a component that returns a `h5` with a message
+- First, on the `survey` directory create a new file call `SurveyFormReview.js`
+- On this new file build a component that returns an `h5` with a message
 
   ```js
   import React from "react";
@@ -3393,7 +3393,7 @@ On a little side note, we mention that we are gonna use a component level `state
 
 - Now on the `SurveyNew` component import the `SurveyFormReview` component
   `import SurveyFormReview from "./SurveyFormReview";`
-- Then initialite a `state` on the `SurveyNew` component call `showFormReview` and it initial value will be `false`
+- Then initialize a `state` on the `SurveyNew` component call `showFormReview` and its initial value will be `false`
 
   ```js
   state = {
@@ -3432,3 +3432,41 @@ On a little side note, we mention that we are gonna use a component level `state
 - Go to the `SurveyForm` component and use this prop on the `onSubit` property or the form
   `<form onSubmit={this.props.handleSubmit(this.props.onSurveySubmit)}>...</form>`
 - Now you can test locally filling the form and clicking `next`. You should see the `SurveyFormReview` content
+- We can continue now with the `SurveryFormReview` and the `back` button that returns the user to the previews form but first go to the `SurveyForm` component and add the new prop we call it `onCancel` in the `SurveyFormReview` call
+
+  ```js
+  renderContent() {
+    if (this.state.showFormReview) {
+      return (
+        <SurveyFormReview
+          onCancel={() => this.setState({ showFormReview: false })}
+        />
+      );
+    }
+
+    return (
+      <SurveyForm
+        onSurveySubmit={() => this.setState({ showFormReview: true })}
+      />
+    );
+  }
+  ```
+
+- No go to the `SurveyFormReview` and add the following code
+
+  ```js
+  const SurveyFormReview = ({ onCancel }) => {
+    return (
+      <div>
+        <h5>Please confirm your entries</h5>
+        <button className="yellow darken-3 btn-flat" onClick={onCancel}>
+          Back
+        </button>
+      </div>
+    );
+  };
+  ```
+
+- Finally, on your browser fill the form and get to the `review` content
+- Click the `back` button
+- You should see the form again after clicked
