@@ -3470,3 +3470,44 @@ On a little side note, we mention that we are gonna use a component level `state
 - Finally, on your browser fill the form and get to the `review` content
 - Click the `back` button
 - You should see the form again after clicked
+
+### Persisting form values
+
+As you may notice at this moment each time you are back from the `review` component all the form values disappear; this is because `redux-form` have a pre-configuration that delete all values when the component that has the form is unmounted but for our application, we need those values to persist between components. Is kind of straightforward because you only need to add one more property in the `reduxForm` helper that we defined on the `SurveyForm` component that is called `destroyOnUnmount` and set it value to `false`(by default is `true`)
+
+```js
+export default reduxForm({
+  validate,
+  form: "surveyForm",
+  destroyOnUnmount: false,
+})(SurveyForm);
+```
+
+Now you can go back from the `review` content and you will see that the values persist but we still missing the values on the `SurveyFormReview` component to actually said that the form's value persists in both components. To have the access to those form values as you may infer we going to use `Redux`; because from the beginning of the setup of the form that was our intention and `redux-form` automatically set that `state` on the `Redux store` for us.
+
+So in the `SurveyFormReview` import the `connect` helper from `react-redux`:
+`import { connect } from "react-redux";`
+
+Now we need to create the `mapStateToProps` that receive our `state` but for now, we are gonna `console.log` the `state` and return an empty object.
+
+```js
+function mapStateToProps(state) {
+  console.log(state);
+  return {};
+}
+```
+
+Then add the `connect` helper:
+`export default connect(mapStateToProps)(SurveyFormReview);`
+
+At this moment we can begin to test the `state` and see if we got the form values. To do this you just need to fill the form and click the `next` button then check your browser `console`. If you were successful you will see the `states` that are in the `redux store` in the case `auth` and `form`. On the `form` object you will see a property called `surveyForm` that has a property called `values` that as you realize now are the form values. But why we got a `form` state and a `surveyForm` object that have the values? This is because we set it this way inside of the configuration object that we send to the `helper` call `reduxForm` in the `SurveyForm`; by adding `form: "surveyForm"` we told `redux-form` that store all our form values in a key call `surveyForm`. This configuration is helpful when you got more than one form to separate its values.
+
+Now that we got where are the form values we can update the `mapStateToProps` function:
+
+```js
+function mapStateToProps(state) {
+  return {
+    formValues: state.form.surveyForm.values,
+  };
+}
+```
