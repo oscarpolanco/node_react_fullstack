@@ -3363,3 +3363,72 @@ When you add the `title` property in the `errors` object `redux-form` automatica
   ```
 
   We add an empty string when we call the `validateEmails` function because when we render the page the validations will run and `values.emails` will be `undefined`. Also, it's important that we put the `error.emails` before the `empty` validation because it will override the validations of the `email` checking
+
+### Toggling visibility
+
+At this moment we finish setting up our form so is a good time to continue with the `surveyReview` component. We need to begin to think about how we gonna show the `SurveyReview` after we complete the form.
+
+We got a couple of options that we can use to toggle between the 2 views. First, we can create a separate `route` for the `surveyReview` component this means that after the `user` click the next button will go to a new `route` for example `survey/new/review` and when the `user` is there we show to it the `review` screen; this will be a very clear and easy to understand implementation but have one downside that is if a `user` for some reason go to the specific `route` that represent the `review` screen; it can go to this `route` without passing to the `route` of the form and the `user` will not have information related of a `survey`. The other option is to use `Redux` so whenever a `user` click the next button we update some a `state` on the `Redux store` that symbolizes that the `user` complete with valid information the form and can progress to the `review` page then on the `SurveyNew` component we can use that piece of `state` to decide with the component we will show but this option has a downside too that is that we need to update the `action creator`; create an `action`; update the `reducer` and add the necessary parts to the `SurveyNew` component to use that piece of `state` so this means that we need a lot of extra code and effort to do the `toggle` task. The last option that we can use to control the `toggle` is to create a `component level state`; in the `SurveyNew` we can add a little piece of `state` maybe a `boolean` that with `true` or `false` value show on the components and we need to pass a `handler` to both `SurveyForm` and `SurveyReview` component that `toggle` that piece of `state`. The last option solves the `route` issue of the first option and take less effort than the second option so we will use the last option to do the `toggle` task.
+
+On a little side note, we mention that we are gonna use a component level `state` for the `toggle` task but maybe you are asking why a component level `state`? if we got `Redux` to manage all the `state` of the application. This is because this particular `state` will be used only in one component and there will not have any other component that cares about this particular `state`.
+
+#### Adding the toogle state and use it
+
+- First on the `survey` directory create a new file call `SurveyFormReview.js`
+- On this new file build a component that returns a `h5` with a message
+
+  ```js
+  import React from "react";
+
+  const SurveyFormReview = () => {
+    return (
+      <div>
+        <h5>Please confirm your entries</h5>
+      </div>
+    );
+  };
+
+  export default SurveyFormReview;
+  ```
+
+- Now on the `SurveyNew` component import the `SurveyFormReview` component
+  `import SurveyFormReview from "./SurveyFormReview";`
+- Then initialite a `state` on the `SurveyNew` component call `showFormReview` and it initial value will be `false`
+
+  ```js
+  state = {
+    showFormReview: false,
+  };
+  ```
+
+- Create a function call `renderContent` to use this new `state` to render the component that we need
+
+  ```js
+  renderContent() {
+    if (this.state.showFormReview) {
+      return <SurveyFormReview />;
+    }
+
+    return (
+      <SurveyForm />
+    );
+  }
+  ```
+
+- Them remove the `SurveyForm` call on the `render` function and put in his place the `renderContent` function
+
+  ```js
+  render() {
+    return <div>{this.renderContent()}</div>;
+  }
+  ```
+
+- Now we can add a prop on the `SurveyForm` with use the toggle `state`
+
+  ```js
+  <SurveyForm onSurveySubmit={() => this.setState({ showFormReview: true })} />
+  ```
+
+- Go to the `SurveyForm` component and use this prop on the `onSubit` property or the form
+  `<form onSubmit={this.props.handleSubmit(this.props.onSurveySubmit)}>...</form>`
+- Now you can test locally filling the form and clicking `next`. You should see the `SurveyFormReview` content
