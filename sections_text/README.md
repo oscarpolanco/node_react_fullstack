@@ -3511,3 +3511,27 @@ function mapStateToProps(state) {
   };
 }
 ```
+
+### Refactoring form fields
+
+Before we dive in on the `SurveyFormReview` we need to be a little change to our `SurveyForm` because we are gonna use some of the values in the `SurveyFormReview` component, in this case, the input `label` because are going to be the same in both components and if one of this `labels` change we want that both components reflect the changes. So we will follow the next steps:
+
+- On the `surveys` directory create a file call `formFields.js`
+- Inside of this new file export an array with the same content of the `FIELDS` array in the `SurveyForm` component
+
+  ```js
+  export default [
+    { label: "Survey Title", name: "title" },
+    { label: "Subject Line", name: "subject" },
+    { label: "Email body", name: "body" },
+    { label: "Recipient list", name: "emails" },
+  ];
+  ```
+
+- Go to the `SurveyForm` componente and import this new `formFields` array
+  `import formFields from "./formFields";`
+- Delete the `FIELDS` array
+- Go to the `map` function in the `renderFields` helper and change `FIELDS` for `formFields`
+  `return _.map(formFields, ({ label, name }) => {...}`
+- Then go to the `validate` function and remove `FIELDS` from the `each` function for `formFields`
+  `_.each(formFields, ({ name }) => {...}`
