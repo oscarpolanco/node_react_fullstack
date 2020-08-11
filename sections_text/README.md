@@ -3668,3 +3668,20 @@ Before we tackle the other task we need to do a little change on the object that
 
 - Then go to the `SurveyForm` component and on `errors.emails` line in the `validate` function replace `emails` for `recipients`
   `errors.recipients = validateEmails(values.recipients || "");`
+
+#### Submit the form
+
+Now we are in a good position to finish the `submit` buttom after the `user` review the form values that he introduce to our application. To do this we just need to finish our `action creator` using the `route handler` that we create before. So go to your `index.js` file in the `actions` directory and update the `submitSurvey` code like this:
+
+```js
+export const submitSurvey = (values) => async (dispatch) => {
+  const res = await axios.post("/api/surveys", values);
+
+  dispatch({
+    type: FETCH_USERS,
+    payload: res.data,
+  });
+};
+```
+
+We follow the same way that we did on the others `actions` because if you remember correctly we return the `user` from the `/api/survey` handler with the `credits` deduction and we wanna update the state when that `post` request finish. At this moment you can test filling the form information; checking if you receive an email and your `credits` have a deduction of its value.
