@@ -3650,3 +3650,21 @@ We are going the delete form values task first. Like we spoke before we need to 
 - You should see that all values are deleted
 
 As you may notice we attach the `SurveyNew` component to our form and if you remember `redux-form` have a default configuration that said if you `unmount` the component attach to a form it will automatically delete all form values; this means why after the `SurveyNew` is `unmounted` all form values will be dropped but this is different for the `SurveyForm` because we explicitly add on the configuration object of the `reduxForm` helper the `destroyOnUnmount` with a `false` value that will prevent this `redux-form` feature to happen.
+
+#### Fix naming issue
+
+Before we tackle the other task we need to do a little change on the object that we receive from `redux-form`. Are you remember when we create the `route handler` for the `surveys` creation we receive an object with a `recipients` property to work but on the client we defined a `emails` property instead of `recipients` so we need to update this to match with the backend expect object.
+
+- First, go to the `formFiels` file and update the `name` that have `emails` as it values to `recipients`
+
+  ```js
+  export default [
+    { label: "Survey Title", name: "title" },
+    { label: "Subject Line", name: "subject" },
+    { label: "Email body", name: "body" },
+    { label: "Recipient list", name: "recipients" },
+  ];
+  ```
+
+- Then go to the `SurveyForm` component and on `errors.emails` line in the `validate` function replace `emails` for `recipients`
+  `errors.recipients = validateEmails(values.recipients || "");`
