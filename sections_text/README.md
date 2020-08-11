@@ -3535,3 +3535,39 @@ Before we dive in on the `SurveyFormReview` we need to be a little change to our
   `return _.map(formFields, ({ label, name }) => {...}`
 - Then go to the `validate` function and remove `FIELDS` from the `each` function for `formFields`
   `_.each(formFields, ({ name }) => {...}`
+- Now we can begin with the `SurveyFormReview` component. The first thing will be to import `loadash`
+  `import _ from "lodash";`
+- Import the `formFields` array
+  `import formFields from "./formFields";`
+- Add the `formValues` as a prop of the `SureyFormReview` component
+  `const SurveyFormReview = ({ onCancel, formValues }) => {...}`
+- Then create a constat call `reviewFields` and add a `map` function that loop thow the `formsFields` array
+  `const reviewFields = _.map(formFields, ({ label, name }) => {...}`
+- Inside of the `map` function returns the following structure
+
+  ```js
+  const reviewFields = _.map(formFields, ({ label, name }) => {
+    return (
+      <div key={name}>
+        <label>{label}</label>
+        <div>{formValues[name]}</div>
+      </div>
+    );
+  });
+  ```
+
+- Bellow the `h5` on the return statement in the `SurveyFormReview` component add the `reviewFields` constant
+
+  ```js
+  return (
+    <div>
+      <h5>Please confirm your entries</h5>
+      {reviewFields}
+      <button className="yellow darken-3 btn-flat" onClick={onCancel}>
+        Back
+      </button>
+    </div>
+  );
+  ```
+
+- Finally, check if you see the values of the form as a `review` content
