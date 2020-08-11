@@ -3623,3 +3623,30 @@ return (
     <i className="material-icons right">email</i>
   </button>
   ```
+
+### Finish the create/send task
+
+At this moment we got 3 tasks that we need to handle to finish the client-side of creating the `survey` this 3 task are:
+
+- If you notice when the `user` fill the form press the `cancel` button or change the `page` to another one the values of the form still have values so we need to clean the form on those cases.
+- The other task is to complete the `submit` button on the `SurveyFormReview` component on which we are going to create the `survey` and send the `emails`
+- And finally, after submit we need that the `user` is redirected to the `dashboard` page after submit
+
+#### Dumping form values
+
+We are going the delete form values task first. Like we spoke before we need to dump the form values after redirecting the page to another one; to do this we are going to take advantage of a `redux-form` feature that we already saw but first, we will add the code and then explain what just happen.
+
+- First, go to the `SurveyNew` component and import the `reduxForm` helper
+  `import { reduxForm } from "redux-form";`
+- Like we did before use the `reduxForm` helper on the export statement of the `SurveyNew` component with the same `form` key that you add on the `SurveryForm` component before
+
+  ```js
+  export default reduxForm({
+    form: "surveyForm",
+  })(SurveyNew);
+  ```
+
+- Finally, test on your browser filling the form and pressing the `cancel` button and go back to the form
+- You should see that all values are deleted
+
+As you may notice we attach the `SurveyNew` component to our form and if you remember `redux-form` have a default configuration that said if you `unmount` the component attach to a form it will automatically delete all form values; this means why after the `SurveyNew` is `unmounted` all form values will be dropped but this is different for the `SurveyForm` because we explicitly add on the configuration object of the `reduxForm` helper the `destroyOnUnmount` with a `false` value that will prevent this `redux-form` feature to happen.
