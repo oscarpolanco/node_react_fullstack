@@ -3571,3 +3571,55 @@ Before we dive in on the `SurveyFormReview` we need to be a little change to our
   ```
 
 - Finally, check if you see the values of the form as a `review` content
+
+### Send button
+
+We finally get into the place to add the final step on the `survey` process that is the `send survey` button. At this moment we just need to add the following code on the return statement on the `SurveyFormReview` component:
+
+```js
+return (
+    <div>
+      <h5>Please confirm your entries</h5>
+      {reviewFields}
+      <button
+        className="yellow white-text darken-3 btn-flat"
+        onClick={onCancel}
+      >
+        Back
+      </button>
+      <button className="green btn-flat white-text right">
+        Send Survey
+        <i className="material-icons right">email</i>
+      </button>
+    </div>
+  );
+};
+```
+
+- Now we are going to do some kind of an update in our `Redux` state so we will need an `action creator` to do this so go to the `actions` directory and add in the `index` file the following function:
+
+  ```js
+  export const submitSurvey = (values) => {
+    return { type: "submit_survey" };
+  };
+  ```
+
+  We still not going to add logic to it but `redux` is expecting that you return an object with a `type` property and we put this as example
+
+- On the `SurveyFormReview` import the `actions`
+  `import * as actions from "../../actions";`
+- Send as a second parameter the `actions` in the `connect` helper
+  `export default connect(mapStateToProps, actions)(SurveyFormReview);`
+- Add the `submitSurvey` action as a parameter of the `SurveyFormReview` component
+  `const SurveyFormReview = ({ onCancel, formValues, submitSurvey }) => {...}`
+- Add an `onClick` property in the `Send Survey` button sending a callback function usign the `submitSurvey`
+
+  ```js
+  <button
+    onClick={() => submitSurvey(formValues)}
+    className="green btn-flat white-text right"
+  >
+    Send Survey
+    <i className="material-icons right">email</i>
+  </button>
+  ```
