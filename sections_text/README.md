@@ -3685,3 +3685,35 @@ export const submitSurvey = (values) => async (dispatch) => {
 ```
 
 We follow the same way that we did on the others `actions` because if you remember correctly we return the `user` from the `/api/survey` handler with the `credits` deduction and we wanna update the state when that `post` request finish. At this moment you can test filling the form information; checking if you receive an email and your `credits` have a deduction of its value.
+
+#### Redirect on submit
+
+Finally, we can work with the last task of the `survey` creation and send on the client that is to redirect the `user` when it click the `send email` button but first we need to specify some issue that we have on this. As you may remember we use the `Link` component from `react-router` to redirect the `user` to another page but we can't use it this time because the `SurveyFormReview` doesn't know about `react-router` this means that this component doesn't have some logic that refers it to `react-router` like the `SurveyNew` component that is directly rendered by `react-router` and when `react-router` renders a component it passes it information and a lot of props to that component and all of this configuration are not pass down to the child component in this case `SureveyFormReview` so we will need a function to let know this component about `react-router` and that function is the `withRouter` function that will provide us with some props that will help us to redirect the `user` more specifically the `history` object.
+
+- On your editor go to the `SurveyFormReview` component and import `withRouter` from `react-router-dom`
+  `import { withRouter } from "react-router-dom";`
+- On the export statement use the `withRouter` function and send the `SurveyFormReview` as a parameter
+  `export default connect(mapStateToProps, actions)(withRouter(SurveyFormReview));`
+- Add `history` as a prop of the `SurveyFormReview` component
+  `const SurveyFormReview = ({ onCancel, formValues, submitSurvey, history }) => {...}`
+- Send the `history` prop to our `action creator` on the `Send Email` button
+  `onClick={() => submitSurvey(formValues, history)}`
+- Go to the `index.js` file in the `actions` directory
+- Add the `history` parameter in the `submitSurvey` function
+  `export const submitSurvey = (values, history) => async (dispatch) => {...}`
+- Use the `push` function from the `history` object sending the `/surveys` url as a parameter
+
+  ```js
+  export const submitSurvey = (values, history) => async (dispatch) => {
+    const res = await axios.post("/api/surveys", values);
+
+    history.push("/surveys");
+
+    dispatch({
+      type: FETCH_USERS,
+      payload: res.data,
+    });
+  };
+  ```
+
+- Finally test the application and at the end you should be redirect to the `dashboard` page
