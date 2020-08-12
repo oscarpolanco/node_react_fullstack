@@ -18,6 +18,7 @@
 - [React](https://reactjs.org/) for the `client` side of our application
 - [Materilize-css](https://materializecss.com/) for the `styles` of the application
 - [Redux](https://redux.js.org/introduction/getting-started) to manage the `state` of our application
+- [Redux form](https://redux-form.com/8.3.0/) to control the form of the application
 - [React Router](https://www.npmjs.com/package/react-router-dom) for the navigation on the `client`
 - [StripeCheckout](https://www.npmjs.com/package/react-stripe-checkout) for the payment process on the client
 - [Stripe](https://www.npmjs.com/package/stripe) for the payment process on the backend
@@ -27,6 +28,7 @@
 
 - [Landing page](http://localhost:3000/)
 - [Dashboard](http://localhost:3000/surveys)
+- [Survey page](http://localhost:3000/surveys/new)
 
 ## Step to run the example
 
