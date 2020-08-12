@@ -2785,3 +2785,935 @@ If you notice we still have our local URL in the links of the `body` on the `ema
   `const keys = require("../../config/keys");`
 - Finally on both anchor tags add the following url
   `href="${keys.redirectDomain}/api/surveys/thanks"`
+
+## Section 11: Survey on the client
+
+We can continue working on the `route handlers` that still need to do in order to complete the `survey` task on the backend of our application but is a good moment to add in the client a way to add the `survey` that will help us to have a more clear view on the `survey` task that we are working. To create the `survey` on the client we will use a `form`; this `form` will have it own `route` and we can get to this `route` by a button on the `dashboard` page so this means that we will begin to work with this button on the `dashboard` page.
+
+- Go to the `client/src/components` directory and create a file call `Dashboard.js`
+- Then create a `Dashboard` component with some text to test and `export` it
+
+  ```js
+  import React from "react";
+
+  const Dashboard = () => {
+    return <div>Dashboard</div>;
+  };
+
+  export default Dashboard;
+  ```
+
+- Now go to the `App.js` file and `import` the new `Dashboard` component
+  `import Dashboard from "./Dashboard";`
+- Delete the example `Dashboard` function
+- Go back to the `Dashboard` component and add the following code
+
+  ```js
+  const Dashboard = () => {
+    return (
+      <div>
+        Dashboard
+        <div className="fixed-action-btn">
+          <a className="btn-floating btn-large red">
+            <i className="material-icons">add</i>
+          </a>
+        </div>
+      </div>
+    );
+  };
+  ```
+
+  With `materiliza-css` this will add a button on the rigth corner of the browser that will be in charge of redirect us to the `survey` form
+
+- No matter that we already install and use `materialize-css` on our application; we don't have any `icon` to use so we need to use a `link` tag to have the ability to use the `materialize-css` icons. So go to the `index.html` in the `public` directory and add this:
+  `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
+- You should see a button with a `plus` icon in the `dashboard` page
+- Now we need to navigate between `routes` using the button so this mean that we need to use the `Link` component that `react-router-dom` provide to us instead of the `anachor` tag that we put to create the button. First import the `Link` component
+  `import { Link } from "react-router-dom";`
+- Update the button `anchor` using the `Link` compoent
+
+  ```js
+  const Dashboard = () => {
+    return (
+      <div>
+        Dashboard
+        <div className="fixed-action-btn">
+          <Link to="/surveys/new" className="btn-floating btn-large red">
+            <i className="material-icons">add</i>
+          </Link>
+        </div>
+      </div>
+    );
+  };
+  ```
+
+### SurveyNew form
+
+Before we begin to work on the `survey` form we need to speak a little bit about what will be the process that the `user` is going to follow when he creates a `survey` and wants to send it.
+
+The overall form component that we are going to use is gonna be called `SurveyNew` in other words that will be our container component then the actual fields, labels and all that is part of the form are going to be called `SurveyForm` and each individual field are going to be called `SurveyField`. We separate the form on this components because we got some amount of logic that will be complex because when the `user` enter the information of the `survey` on the form might accidentally make a mistake somewhere in the form we will give then the opportunity of review the information that they fill on the inputs instead of sending the email immediately so we will have another component called `SurveyFormReview` and they will have the change to go back to the form or send the `survey`; so this will create some complexity on our task.
+
+As you see we have a lot of components that we will use on the form and some of then will need to share the information that the `user` supply in the form in other words we got a `SurveyNew` that is the father of all the components; a `SurveyForm` that is the father of multiples `SurveyField` and a `SurveyReviewForm` that doesn't have children and is sibling of the `SurveyForm`; knowing this we will have information on the multiple `SurveyField` that we will need to have on the `SurveyReviewForm` after the `user` click on a `submit` button so we need some way to make that information available on multiple components; if we just use `react` we will need to store all the data in the neartest comun parent in this case `SurveyNew` and send the input data as `props` in the `SurveyFormReview` but we already have a library that can help us to share this data between components that is `Redux` so we will have an `action creator` that is call on typing the inputs that update the `Redux store` and we just need to use `connect` to pull data from `Redux` in the `SurveyForReview` but actually we can save more coding time using another library that will preform all the `Redux` process actumoaclly that is call `Redux form`. So we will have `Redux` that create a `store` that is where all the data live inside of our application and we modify this data with the use of our `reducers` in our form case we will have a `formReducer` that is managed entirely by `Redux form` and it records all the values from our form automatically.
+
+### Redux form setup
+
+Now that we just spoke about the process and the tools involved with the `survey` form is a good time, to begin with, the setup
+
+- First, we need to install the `Redux form` library. On your terminal go to the `client` directory use this command
+  `npm install --save redux-form`
+- Then on your editor go to the `reducers` directory to the `index.js` file
+- Import the built-in `reducer` that `Redux form` create for us
+  `import { reducer as reduxForm } from "redux-form";`
+
+  For the convention, we rename the `reducer` to another name because the `reducer` name will be confusing to understand its purpose
+
+- Then we need to add the `form` key with the `reduxForm` reducer in our `combineReducers`
+
+  ```js
+  export default combineReducers({
+    auth: authReducer,
+    form: reduxForm,
+  });
+  ```
+
+  We need to add the `form` key because `Redux form` will expect that the values produced by the `reduxForm` reducer will be in this key
+
+- At this point, we are ready to work on our form so we will begin to create the components that we need. On the `components` directory create a new folder call `surveys`
+- Inside on the `surveys` directory create a file call `SurveyNew.js`
+- In this new file create a `class` base component with some example text and export it
+
+  ```js
+  import React, { Component } from "react";
+
+  class SurveyNew extends Component {
+    render() {
+      return <div>SurveyNew!</div>;
+    }
+  }
+
+  export default SurveyNew;
+  ```
+
+- Now you can go to the `App.js` file and import the `SurveyNew` component
+  `import SurveyNew from "./surveys/SurveyNew";`
+- Delete the `SurveyNew` example function
+
+### ReduxForm helper
+
+At this moment we can begin to create our `form` component and use it on `SurveyNew` using `redux-form`
+
+- First, create a new file call `SurveyForm.js` in the `components/surveys` directory
+- Inside of the `SurveyForm` file create and export a class base component
+
+  ```js
+  import React, { Component } from "react";
+
+  class SurveyForm extends Component {
+    render() {
+      return <div>SurveyForm!</div>;
+    }
+  }
+
+  export default SurveyForm;
+  ```
+
+- Go to the `SurveyNew` component and import the `SurveyForm` component
+  `import SurveyForm from "./SurveyForm";`
+- Use the `SurveyForm` component inside of the `div` in the `return` statement in the `render` function
+
+  ```js
+  class SurveyNew extends Component {
+    render() {
+      return (
+        <div>
+          <SurveyForm />
+        </div>
+      );
+    }
+  }
+  ```
+
+- Now we can begin to hook the `SurveyForm` to the `redux-form` library so first, we will call a helper that will tell `redux-from` to take control of any `form` in the component called `reduxForm`
+  `import { reduxForm } from "redux-form";`
+- Using the `reduxForm` helper we now have access to the `redux store` and is a lot like the `connect` function that we use before in the implementation. Now on the export statement use the `reduxForm` helper like this
+
+  ```js
+  export default reduxForm({
+    form: "surveyForm",
+  })(SurveyForm);
+  ```
+
+  We gonna talk a little bit more about the configuration object that we use here
+
+### Redux form in practice
+
+At this moment we will add some fields in the `SurveyForm` instead of creating the `SurveyField` component to see a little bit of `redux-form` in practice.
+
+- On the `SurveyForm` search the import statement of the `reduxForm` helper and import the `Field` component
+  `import { reduxForm, Field } from "redux-form";`
+
+  The `Field` component will help us to render absolutlly any type of traditional `HTML` form elements
+
+- Now we can use it on the `return` statement in the `render` function
+
+  ```js
+  class SurveyForm extends Component {
+    render() {
+      return (
+        <div>
+          <Field type="text" name="surveyTitle" component="input" />
+        </div>
+      );
+    }
+  }
+  ```
+
+  The `Field` component can't be use by itself so we need to add certain `props` to it in order to render in the page
+
+  - `type=text`: Specify the `type` of the element that we are gonna render in this case a input type text
+  - `name="surveyTitle"`: The `name` property tells `redux-form` that we have on piece of data been produce by our form call `surveyTitle` in this case and you can be any string of your choosing. So when a `user` type on this field `redux-form` will take the value of that input and is gonna store it in our `redux` store by the key call `surveyTitle` in this case
+  - `component="input"`: Tells the field component how is gonna be render; in this case will be render as a `HTML` input tag. We can send a component to this property instead of a `string`
+
+- Now we need some way of `submit` the information of the `input` that we create so we gonna add that `input` inside of a `form` tag
+
+  ```js
+  return (
+      <div>
+        <form>
+          <Field type="text" name="surveyTitle" component="input" />
+        </form>
+      </div>
+    );
+  }
+  ```
+
+- Next we need to add a `onSubmit` prop to the `form` tag with the value that we show here
+
+  ```js
+  return (
+      <div>
+        <form onSubmit={this.props.handleSubmit((value) => console.log(value))}>
+          <Field type="text" name="surveyTitle" component="input" />
+        </form>
+      </div>
+    );
+  }
+  ```
+
+  The `handleSubmit` prop is a function that is provided automaclly by our `reduxForm` helper and when we call `handlerSubmit` and pass a function of our own this function will be call when the `user` submit the form
+
+- Now add a button to `submit` the form
+
+  ```js
+  return (
+      <div>
+        <form onSubmit={this.props.handleSubmit((value) => console.log(value))}>
+          <Field type="text" name="surveyTitle" component="input" />
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    );
+  }
+  ```
+
+- Then you can run de app and go to the `survey/new` page
+- Type something on the `input` field
+- Open the browser console
+- Click on the `submit` button
+- You should see the data that you type on the `input` in an object with a key call `surveyTitle`
+
+### Custom field component
+
+Now that we have a better idea on how `redux-form` is gonna help us we can begin to create the `SurveyField` component for our custom field to have some amount of code that we can re-use on the different `inputs` and `label` that we are going to use in our form.
+
+- On your editor go to the `components/survey` directory
+- Create a new file call `SuveryField.js`
+- Create and export a functional component that returns an input
+
+  ```js
+  import React from "react";
+
+  export default () => {
+    return (
+      <div>
+        <input />
+      </div>
+    );
+  };
+  ```
+
+- Go to the `SurveyField` component and import the component that you just created
+  `import SurveyField from "./SurveyField";`
+- Delete the `Field` component that we create
+- Create a function call `renderFields` inside of the `SurveyForm` calls that returns the `Field` component with the `type=text`; for now the `name=title` and on the `components` props use the `SurveryField` component
+
+  ```js
+  renderFields() {
+    return (
+      <div>
+        <Field type="text" name="title" component={SurveyField} />
+      </div>
+    );
+  }
+  ```
+
+- Use the `renderFields` function on the same place that we have the first `Field` that we add before
+
+  ```js
+  render() {
+    return (
+      <div>
+        <form onSubmit={this.props.handleSubmit((value) => console.log(value))}>
+          {this.renderFields()}
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    );
+  }
+  ```
+
+- Test on your local and you should see the same result that the preview example without the submit data
+- At this moment our `input` is rendered by the `Field` component so `redux-form` have the ability to send a lot of `props` to our `SurveyField` component and we can `use` it to connect our input to the `redux-form` library so add `props` as a parameter of the `SurveyField` component and `console.log` it
+
+  ```js
+  export default (props) => {
+    console.log(props);
+    return (
+      <div>
+        <input />
+      </div>
+    );
+  };
+  ```
+
+  As you see on the browser you have an object that the `redux-form` library sends to our component. If you see closely you will see an `input` property that has a couple of these functions and if you look those functions closely you will see that are events handlers automatically generated by `redux-form`. So if we take all the `props` that are on the `input` key and pass it to our `input`; the `redux-form` library watch for any changes that match with one of this `event handlers`
+
+- Now we can use `destructuring` to receive the `input` object directly and pass it to our `input`
+
+  ```js
+  export default ({ input }) => {
+    return (
+      <div>
+        <input {...input} />
+      </div>
+    );
+  };
+  ```
+
+- Now test on your browser and submit the data. You should see an object with the information in the browser's console
+- If you see the expected result we can continue building our `SurveyField` component. Each `input` will have an individual `labels` that represent then so we need to add a new `prop` on our `SurveyField` component call `label`
+  `export default ({ input, label }) => {...}`
+- Now add a `label` tag and use the `label` prop
+
+  ```js
+  return (
+    <div>
+      <label>{label}</label>
+      <input {...input} />
+    </div>
+  );
+  ```
+
+- Then go to the `SurveyForm` component and on the `Field` component add a new prop call `label` with the information that you want
+
+  ```js
+  <Field
+    label="Survey Title"
+    type="text"
+    name="title"
+    component={SurveyField}
+  />
+  ```
+
+  By default, each property that you add to the `Field` component will be sent to our `SurveyField` component
+
+- Now test on your browser that the `label` exist
+- Then we need to add the other `fields` for our form. For this purpose, we gonna use the `map` function from `lodash` so go to your terminal and on the `client` directory install the `lodash` package
+  `npm install --save lodash`
+- On your editor go to the `SurveyForm` and import the `lodash` module
+  `import _ from "lodash";`
+- Now we need to create an `array` with the properties that repeat itself on each `Field` component that we need
+
+  ```js
+  const FIELDS = [
+    { label: "Survey Title", name: "title" },
+    { label: "Subject Line", name: "subject" },
+    { label: "Email body", name: "body" },
+    { label: "Recipient list", name: "emails" },
+  ];
+  ```
+
+- Go to the `renderFields` helper function and remove the current `Field` component
+- Use the `map` function from `lodash` to loop throw the `FIELDS array`
+
+  ```js
+  renderFields() {
+    return _.map(FIELDS, ({ label, name }) => {
+      return (
+        <Field
+          key={name}
+          component={SurveyField}
+          type="text"
+          label={label}
+          name={name}
+        />
+      );
+    });
+  }
+  ```
+
+- Go to your browser and test all `fields`
+
+### Add buttons with style
+
+Like we mentioned before the `submit` button that we have actually is not going to `submit` the `survey` that we just created with the form instead is going to a review page so the `user` can do the last check on the information that he is going to `submit`. With this, we can begin to work a little bit on the looks of the button.
+
+Also, we are going to have a `cancel` button on the form to get back to the `dashboard` page
+
+- On your editor go to the `SurveyForm` component
+- Import the `Link` component from `react-router-dom`
+  `import { Link } from "react-router-dom";`
+- Add a `Link` before the `submit` button with the following classes and message
+
+  ```js
+  <Link to="/surveys" className="red btn-flat white-text">
+    Cancel
+  </Link>
+  ```
+
+- Now update the `submit` button like this
+
+  ```js
+  <button type="submit" className="teal btn-flat right white-text">
+    Next
+    <i className="material-icons right">done</i>
+  </button>
+  ```
+
+- Test on the browser the buttons
+
+### Form validation
+
+We got almost complete our form but is still missing one of the important parts of a form that is the `validation` to prevent the `user` to submit the incorrect data values.
+
+- On your editor go to the `surveyForm` component
+- Add the following property to the `reduxForm` configuration object
+
+  ```js
+  export default reduxForm({
+    validate,
+    form: "surveyForm",
+  })(SurveyForm);
+  ```
+
+  If we passed a function on the key `validate` that function will run anytime that a `user` wants to submit the form so we can use it to validate the data of the form and provide feedback to the `user`.
+
+- Now before of the export statement create a function call `validate` and recive `values` as a parameter
+  `function validate(values) {}`
+
+  The `values` parameter is automatically passed by `redux-form` to the `validate` function containing the values relate to the form that the user is attending to `submit`
+
+- Next, we need to return an object that `redux-form` will check if is empty `redux-form` assume that the form is valid and continue with the `submit` process but is have some property will consider that the form is invalid
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    return errors;
+  }
+  ```
+
+- Now we can add our first validation rule. Add a condition that checks if the `title` property of the `values` object exists and if don't exist add the `title` property with a string with an error message
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    if (!values.title) {
+      errors.title = "You must provide a title";
+    }
+
+    return errors;
+  }
+  ```
+
+#### Showing validation errors
+
+At this moment have our first validation rule but we still not show it to the `user` in the browser. We can begin the process to show it on the browser.
+
+When you add the `title` property in the `errors` object `redux-form` automatically associate that `error` with the field that has the same name in this case `title` and we can access to it in the `meta` object that `redux-form` send you to the `surveyField` component.
+
+- First, on your editor go to the `surveyField` component add `meta` as a prop of the component and `console.log` it value
+
+  ```js
+  export default ({ input, label, meta }) => {
+    console.log(meta);
+    return (
+      <div>
+        <label>{label}</label>
+        <input {...input} />
+      </div>
+    );
+  };
+  ```
+
+- Go to your browser and submit the form
+- Check on the console and on the first log check the object and you should see an `error` property with the message that you create in the `validate` function before
+- Now add delete the `console.log`
+- Update the `meta` parameter so we can use destructuring to it
+  `export default ({ input, label, meta: { error, touched } }) => {...};`
+- Add the `error` bellow the `input` always asking if `touched` is `true`
+
+  ```js
+  export default ({ input, label, meta: { error, touched } }) => {
+    return (
+      <div>
+        <label>{label}</label>
+        <input {...input} />
+        {touched && error}
+      </div>
+    );
+  };
+  ```
+
+  The `touched` property of the `meta` object has a value of `true` after the `user` touch the input and we will use it to present the `error` because if we don't at it the `error` will show even the `user` doesn't use the input
+
+- Now we can continue adding the validation of the other inputs and some styling. On the `surveyField` component add the following code to have a better experience when you see the `error`
+
+  ```js
+  export default ({ input, label, meta: { error, touched } }) => {
+    return (
+      <div>
+        <label>{label}</label>
+        <input {...input} style={{ marginBottom: "5px" }} />
+        <div className="red-text" style={{ marginBottom: "20px" }}>
+          {touched && error}
+        </div>
+      </div>
+    );
+  };
+  ```
+
+- Then go to the `SurveyForm` component and update the condition of the `validate` function with the following code
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    _.each(FIELDS, ({ name }) => {
+      if (!values[name]) {
+        errors[name] = "You must provide a value";
+      }
+    });
+
+    return errors;
+  }
+  ```
+
+  At this case we are going to use the `FIELDS` object and use the `name` to know with `value` that we want to check and to add it to the `error` object if is needed
+
+- Test on the browser and you should see an error on every `input` when you try to `submit` or `touch` the `input` and don't add text
+- We now need a special kind of validation for the `recipients` input because the `user` will have to enter the `emails` with a specific parterm and separate each one with a comma and space so this mean we need to add another piece of logic that handle all this. First we need to create a new function to store all this logic so we need to create a new directory call `utils` in the `src` folder
+- Inside of the new directory add a file call `validateEmails.js`
+- Now create a export a function that recibe `emails` as a parameter
+  `export default (emails) => {}`
+- Then we need to `split` every `email` and eliminate the extra `space` that they have
+  `const invalidEmails = emails.split(",").map((email) => email.trim());`
+- We need now to `test` if an `email` is valid and to do this we are gonna use a [regular expresion](https://en.wikipedia.org/wiki/Regular_expression). To obtain this `regular expression` on your browser go to the [emailregex](http://emailregex.com/) page
+- Scroll down and find the `Javascript`; then copy the `regular expression`
+- Go to the `validateEmails` file and on the top of the file create a variable call `re` and use the `regular expression` that you just copy as it value
+  `const re = your_js_regular_expretion`
+- Now that we separate and remove the spaces of the `emails` we need to `filter` to find the invalid `emails` on the array using the `test` function return just the invalid `emails`
+
+  ```js
+  const invalidEmails = emails
+    .split(",")
+    .map((email) => email.trim())
+    .filter((email) => {
+      if (email.length) return re.test(email) === false;
+    });
+  ```
+
+- Then create a condition that checks if `invalidEmails` have a `length` and if it does you will add a message and the invalid `emails`
+
+  ```js
+  if (invalidEmails.length) {
+    return `These emails are invalid: ${invalidEmails}`;
+  }
+  ```
+
+- Go to the `SurveryForm` component and import the `validateEmails` function
+  `import validateEmails from "../../utils/validateEmails";`
+- On the `validate` function before the condition call the `validationEmails` adding it value to the `emails` property of the `error` object
+
+  ```js
+  function validate(values) {
+    const errors = {};
+
+    errors.emails = validateEmails(values.emails || "");
+
+    _.each(FIELDS, ({ name }) => {
+      if (!values[name]) {
+        errors[name] = "You must provide a value";
+      }
+    });
+
+    return errors;
+  }
+  ```
+
+  We add an empty string when we call the `validateEmails` function because when we render the page the validations will run and `values.emails` will be `undefined`. Also, it's important that we put the `error.emails` before the `empty` validation because it will override the validations of the `email` checking
+
+### Toggling visibility
+
+At this moment we finish setting up our form so is a good time to continue with the `surveyReview` component. We need to begin to think about how we gonna show the `SurveyReview` after we complete the form.
+
+We got a couple of options that we can use to toggle between the 2 views. First, we can create a separate `route` for the `surveyReview` component this means that after the `user` click the next button will go to a new `route` for example `survey/new/review` and when the `user` is there we show to it the `review` screen; this will be a very clear and easy to understand implementation but have one downside that is if a `user` for some reason go to the specific `route` that represent the `review` screen; it can go to this `route` without passing to the `route` of the form and the `user` will not have information related of a `survey`. The other option is to use `Redux` so whenever a `user` click the next button we update some a `state` on the `Redux store` that symbolizes that the `user` complete with valid information the form and can progress to the `review` page then on the `SurveyNew` component we can use that piece of `state` to decide with the component we will show but this option has a downside too that is that we need to update the `action creator`; create an `action`; update the `reducer` and add the necessary parts to the `SurveyNew` component to use that piece of `state` so this means that we need a lot of extra code and effort to do the `toggle` task. The last option that we can use to control the `toggle` is to create a `component level state`; in the `SurveyNew` we can add a little piece of `state` maybe a `boolean` that with `true` or `false` value show on the components and we need to pass a `handler` to both `SurveyForm` and `SurveyReview` component that `toggle` that piece of `state`. The last option solves the `route` issue of the first option and take less effort than the second option so we will use the last option to do the `toggle` task.
+
+On a little side note, we mention that we are gonna use a component level `state` for the `toggle` task but maybe you are asking why a component level `state`? if we got `Redux` to manage all the `state` of the application. This is because this particular `state` will be used only in one component and there will not have any other component that cares about this particular `state`.
+
+#### Adding the toggle state and use it
+
+- First, on the `survey` directory create a new file call `SurveyFormReview.js`
+- On this new file build a component that returns an `h5` with a message
+
+  ```js
+  import React from "react";
+
+  const SurveyFormReview = () => {
+    return (
+      <div>
+        <h5>Please confirm your entries</h5>
+      </div>
+    );
+  };
+
+  export default SurveyFormReview;
+  ```
+
+- Now on the `SurveyNew` component import the `SurveyFormReview` component
+  `import SurveyFormReview from "./SurveyFormReview";`
+- Then initialize a `state` on the `SurveyNew` component call `showFormReview` and its initial value will be `false`
+
+  ```js
+  state = {
+    showFormReview: false,
+  };
+  ```
+
+- Create a function call `renderContent` to use this new `state` to render the component that we need
+
+  ```js
+  renderContent() {
+    if (this.state.showFormReview) {
+      return <SurveyFormReview />;
+    }
+
+    return (
+      <SurveyForm />
+    );
+  }
+  ```
+
+- Them remove the `SurveyForm` call on the `render` function and put in his place the `renderContent` function
+
+  ```js
+  render() {
+    return <div>{this.renderContent()}</div>;
+  }
+  ```
+
+- Now we can add a prop on the `SurveyForm` with use the toggle `state`
+
+  ```js
+  <SurveyForm onSurveySubmit={() => this.setState({ showFormReview: true })} />
+  ```
+
+- Go to the `SurveyForm` component and use this prop on the `onSubit` property or the form
+  `<form onSubmit={this.props.handleSubmit(this.props.onSurveySubmit)}>...</form>`
+- Now you can test locally filling the form and clicking `next`. You should see the `SurveyFormReview` content
+- We can continue now with the `SurveryFormReview` and the `back` button that returns the user to the previews form but first go to the `SurveyForm` component and add the new prop we call it `onCancel` in the `SurveyFormReview` call
+
+  ```js
+  renderContent() {
+    if (this.state.showFormReview) {
+      return (
+        <SurveyFormReview
+          onCancel={() => this.setState({ showFormReview: false })}
+        />
+      );
+    }
+
+    return (
+      <SurveyForm
+        onSurveySubmit={() => this.setState({ showFormReview: true })}
+      />
+    );
+  }
+  ```
+
+- No go to the `SurveyFormReview` and add the following code
+
+  ```js
+  const SurveyFormReview = ({ onCancel }) => {
+    return (
+      <div>
+        <h5>Please confirm your entries</h5>
+        <button className="yellow darken-3 btn-flat" onClick={onCancel}>
+          Back
+        </button>
+      </div>
+    );
+  };
+  ```
+
+- Finally, on your browser fill the form and get to the `review` content
+- Click the `back` button
+- You should see the form again after clicked
+
+### Persisting form values
+
+As you may notice at this moment each time you are back from the `review` component all the form values disappear; this is because `redux-form` have a pre-configuration that delete all values when the component that has the form is unmounted but for our application, we need those values to persist between components. Is kind of straightforward because you only need to add one more property in the `reduxForm` helper that we defined on the `SurveyForm` component that is called `destroyOnUnmount` and set it value to `false`(by default is `true`)
+
+```js
+export default reduxForm({
+  validate,
+  form: "surveyForm",
+  destroyOnUnmount: false,
+})(SurveyForm);
+```
+
+Now you can go back from the `review` content and you will see that the values persist but we still missing the values on the `SurveyFormReview` component to actually said that the form's value persists in both components. To have the access to those form values as you may infer we going to use `Redux`; because from the beginning of the setup of the form that was our intention and `redux-form` automatically set that `state` on the `Redux store` for us.
+
+So in the `SurveyFormReview` import the `connect` helper from `react-redux`:
+`import { connect } from "react-redux";`
+
+Now we need to create the `mapStateToProps` that receive our `state` but for now, we are gonna `console.log` the `state` and return an empty object.
+
+```js
+function mapStateToProps(state) {
+  console.log(state);
+  return {};
+}
+```
+
+Then add the `connect` helper:
+`export default connect(mapStateToProps)(SurveyFormReview);`
+
+At this moment we can begin to test the `state` and see if we got the form values. To do this you just need to fill the form and click the `next` button then check your browser `console`. If you were successful you will see the `states` that are in the `redux store` in the case `auth` and `form`. On the `form` object you will see a property called `surveyForm` that has a property called `values` that as you realize now are the form values. But why we got a `form` state and a `surveyForm` object that have the values? This is because we set it this way inside of the configuration object that we send to the `helper` call `reduxForm` in the `SurveyForm`; by adding `form: "surveyForm"` we told `redux-form` that store all our form values in a key call `surveyForm`. This configuration is helpful when you got more than one form to separate its values.
+
+Now that we got where are the form values we can update the `mapStateToProps` function:
+
+```js
+function mapStateToProps(state) {
+  return {
+    formValues: state.form.surveyForm.values,
+  };
+}
+```
+
+### Refactoring form fields
+
+Before we dive in on the `SurveyFormReview` we need to be a little change to our `SurveyForm` because we are gonna use some of the values in the `SurveyFormReview` component, in this case, the input `label` because are going to be the same in both components and if one of this `labels` change we want that both components reflect the changes. So we will follow the next steps:
+
+- On the `surveys` directory create a file call `formFields.js`
+- Inside of this new file export an array with the same content of the `FIELDS` array in the `SurveyForm` component
+
+  ```js
+  export default [
+    { label: "Survey Title", name: "title" },
+    { label: "Subject Line", name: "subject" },
+    { label: "Email body", name: "body" },
+    { label: "Recipient list", name: "emails" },
+  ];
+  ```
+
+- Go to the `SurveyForm` componente and import this new `formFields` array
+  `import formFields from "./formFields";`
+- Delete the `FIELDS` array
+- Go to the `map` function in the `renderFields` helper and change `FIELDS` for `formFields`
+  `return _.map(formFields, ({ label, name }) => {...}`
+- Then go to the `validate` function and remove `FIELDS` from the `each` function for `formFields`
+  `_.each(formFields, ({ name }) => {...}`
+- Now we can begin with the `SurveyFormReview` component. The first thing will be to import `loadash`
+  `import _ from "lodash";`
+- Import the `formFields` array
+  `import formFields from "./formFields";`
+- Add the `formValues` as a prop of the `SureyFormReview` component
+  `const SurveyFormReview = ({ onCancel, formValues }) => {...}`
+- Then create a constat call `reviewFields` and add a `map` function that loop thow the `formsFields` array
+  `const reviewFields = _.map(formFields, ({ label, name }) => {...}`
+- Inside of the `map` function returns the following structure
+
+  ```js
+  const reviewFields = _.map(formFields, ({ label, name }) => {
+    return (
+      <div key={name}>
+        <label>{label}</label>
+        <div>{formValues[name]}</div>
+      </div>
+    );
+  });
+  ```
+
+- Bellow the `h5` on the return statement in the `SurveyFormReview` component add the `reviewFields` constant
+
+  ```js
+  return (
+    <div>
+      <h5>Please confirm your entries</h5>
+      {reviewFields}
+      <button className="yellow darken-3 btn-flat" onClick={onCancel}>
+        Back
+      </button>
+    </div>
+  );
+  ```
+
+- Finally, check if you see the values of the form as a `review` content
+
+### Send button
+
+We finally get into the place to add the final step on the `survey` process that is the `send survey` button. At this moment we just need to add the following code on the return statement on the `SurveyFormReview` component:
+
+```js
+return (
+    <div>
+      <h5>Please confirm your entries</h5>
+      {reviewFields}
+      <button
+        className="yellow white-text darken-3 btn-flat"
+        onClick={onCancel}
+      >
+        Back
+      </button>
+      <button className="green btn-flat white-text right">
+        Send Survey
+        <i className="material-icons right">email</i>
+      </button>
+    </div>
+  );
+};
+```
+
+- Now we are going to do some kind of an update in our `Redux` state so we will need an `action creator` to do this so go to the `actions` directory and add in the `index` file the following function:
+
+  ```js
+  export const submitSurvey = (values) => {
+    return { type: "submit_survey" };
+  };
+  ```
+
+  We still not going to add logic to it but `redux` is expecting that you return an object with a `type` property and we put this as example
+
+- On the `SurveyFormReview` import the `actions`
+  `import * as actions from "../../actions";`
+- Send as a second parameter the `actions` in the `connect` helper
+  `export default connect(mapStateToProps, actions)(SurveyFormReview);`
+- Add the `submitSurvey` action as a parameter of the `SurveyFormReview` component
+  `const SurveyFormReview = ({ onCancel, formValues, submitSurvey }) => {...}`
+- Add an `onClick` property in the `Send Survey` button sending a callback function usign the `submitSurvey`
+
+  ```js
+  <button
+    onClick={() => submitSurvey(formValues)}
+    className="green btn-flat white-text right"
+  >
+    Send Survey
+    <i className="material-icons right">email</i>
+  </button>
+  ```
+
+### Finish the create/send task
+
+At this moment we got 3 tasks that we need to handle to finish the client-side of creating the `survey` this 3 task are:
+
+- If you notice when the `user` fill the form press the `cancel` button or change the `page` to another one the values of the form still have values so we need to clean the form on those cases.
+- The other task is to complete the `submit` button on the `SurveyFormReview` component on which we are going to create the `survey` and send the `emails`
+- And finally, after submit we need that the `user` is redirected to the `dashboard` page after submit
+
+#### Dumping form values
+
+We are going the delete form values task first. Like we spoke before we need to dump the form values after redirecting the page to another one; to do this we are going to take advantage of a `redux-form` feature that we already saw but first, we will add the code and then explain what just happen.
+
+- First, go to the `SurveyNew` component and import the `reduxForm` helper
+  `import { reduxForm } from "redux-form";`
+- Like we did before use the `reduxForm` helper on the export statement of the `SurveyNew` component with the same `form` key that you add on the `SurveryForm` component before
+
+  ```js
+  export default reduxForm({
+    form: "surveyForm",
+  })(SurveyNew);
+  ```
+
+- Finally, test on your browser filling the form and pressing the `cancel` button and go back to the form
+- You should see that all values are deleted
+
+As you may notice we attach the `SurveyNew` component to our form and if you remember `redux-form` have a default configuration that said if you `unmount` the component attach to a form it will automatically delete all form values; this means why after the `SurveyNew` is `unmounted` all form values will be dropped but this is different for the `SurveyForm` because we explicitly add on the configuration object of the `reduxForm` helper the `destroyOnUnmount` with a `false` value that will prevent this `redux-form` feature to happen.
+
+#### Fix naming issue
+
+Before we tackle the other task we need to do a little change on the object that we receive from `redux-form`. Are you remember when we create the `route handler` for the `surveys` creation we receive an object with a `recipients` property to work but on the client we defined a `emails` property instead of `recipients` so we need to update this to match with the backend expect object.
+
+- First, go to the `formFiels` file and update the `name` that have `emails` as it values to `recipients`
+
+  ```js
+  export default [
+    { label: "Survey Title", name: "title" },
+    { label: "Subject Line", name: "subject" },
+    { label: "Email body", name: "body" },
+    { label: "Recipient list", name: "recipients" },
+  ];
+  ```
+
+- Then go to the `SurveyForm` component and on `errors.emails` line in the `validate` function replace `emails` for `recipients`
+  `errors.recipients = validateEmails(values.recipients || "");`
+
+#### Submit the form
+
+Now we are in a good position to finish the `submit` buttom after the `user` review the form values that he introduce to our application. To do this we just need to finish our `action creator` using the `route handler` that we create before. So go to your `index.js` file in the `actions` directory and update the `submitSurvey` code like this:
+
+```js
+export const submitSurvey = (values) => async (dispatch) => {
+  const res = await axios.post("/api/surveys", values);
+
+  dispatch({
+    type: FETCH_USERS,
+    payload: res.data,
+  });
+};
+```
+
+We follow the same way that we did on the others `actions` because if you remember correctly we return the `user` from the `/api/survey` handler with the `credits` deduction and we wanna update the state when that `post` request finish. At this moment you can test filling the form information; checking if you receive an email and your `credits` have a deduction of its value.
+
+#### Redirect on submit
+
+Finally, we can work with the last task of the `survey` creation and send on the client that is to redirect the `user` when it click the `send email` button but first we need to specify some issue that we have on this. As you may remember we use the `Link` component from `react-router` to redirect the `user` to another page but we can't use it this time because the `SurveyFormReview` doesn't know about `react-router` this means that this component doesn't have some logic that refers it to `react-router` like the `SurveyNew` component that is directly rendered by `react-router` and when `react-router` renders a component it passes it information and a lot of props to that component and all of this configuration are not pass down to the child component in this case `SureveyFormReview` so we will need a function to let know this component about `react-router` and that function is the `withRouter` function that will provide us with some props that will help us to redirect the `user` more specifically the `history` object.
+
+- On your editor go to the `SurveyFormReview` component and import `withRouter` from `react-router-dom`
+  `import { withRouter } from "react-router-dom";`
+- On the export statement use the `withRouter` function and send the `SurveyFormReview` as a parameter
+  `export default connect(mapStateToProps, actions)(withRouter(SurveyFormReview));`
+- Add `history` as a prop of the `SurveyFormReview` component
+  `const SurveyFormReview = ({ onCancel, formValues, submitSurvey, history }) => {...}`
+- Send the `history` prop to our `action creator` on the `Send Email` button
+  `onClick={() => submitSurvey(formValues, history)}`
+- Go to the `index.js` file in the `actions` directory
+- Add the `history` parameter in the `submitSurvey` function
+  `export const submitSurvey = (values, history) => async (dispatch) => {...}`
+- Use the `push` function from the `history` object sending the `/surveys` url as a parameter
+
+  ```js
+  export const submitSurvey = (values, history) => async (dispatch) => {
+    const res = await axios.post("/api/surveys", values);
+
+    history.push("/surveys");
+
+    dispatch({
+      type: FETCH_USERS,
+      payload: res.data,
+    });
+  };
+  ```
+
+- Finally test the application and at the end you should be redirect to the `dashboard` page
