@@ -3717,3 +3717,64 @@ Finally, we can work with the last task of the `survey` creation and send on the
   ```
 
 - Finally test the application and at the end you should be redirect to the `dashboard` page
+
+## Section 12: Handling webhooks data
+
+We now have a form that creates a `survey` on the client and a backend `post` request `route handler` to accept that `survey` and send it to the world. So we have 2 big things to work yet; one is to show the `survey` information on the `dashboard` page and the other one is to record the `feedback` that the `user` has when they click the link on the `email`. At this moment we are gonna take care of the second task mention of recording the feedback of the `user`. When we were working on the `post` route handler of the `survey` we spoke a little bit about how we are going to do this. That time we mention that we will enable `click` tracking inside of our `mailer` that will tell `Sendgrid` that replace every single `anchor` tag of the `email` body with a custom link when `Sendgrid` does that if the `user` click on a link; `Sengird` will know who click on a link and which link is clicked and on some point of time `Sendgrid` will send us that information to our `API` that need to process that notification and store it in some place in our `mongo` database. This relationship between `Sendgrid` and our server is called a `webhook`; that is when one server makes a communicate with another server because of some event that occurs.
+
+### Webhooks on development and production
+
+Before to dive in on `webhooks` in a specific enviroment we need to understand `webhooks` specificaly implemented by `Sengrid`. Imaging that a `user` click a link then in a couple secods later another one clicks a link and a third one click a link a couple seconds later after the second one; after each one of this click `Sengrid` records that click event but it doesn't send it imidiatly to our backend server instead `Sengrid` waits and in some amout of time `Sengrid` make a single request to our `API` that said in the last amout of time that they wait here are all the different events that just occur on your different emails.
+
+Now in production; `Sendgrid` every amount of time will send a request to our server on a `post` request to `your_domain/survey/webhooks` so the request gets to our `API` and we process it. The key that makes it sound a little simple is that `Sendgrid` will do a request to a domain that is shared with the world but on development, the history is a little different because every amount of time `Sendgrid` will do a request to `localhost:5000` but this domain is specific for your local machine, in other words, this domain is meaningless to `Sendgirg` so we need an approach that give us the ability to redirect the `webhook` request to our local machine. To do this we will use a package called `Ngrok` that will help us to redirect the `webhook` request to be more specific when `Sendgrid` make a request to a `Ngrok` domain it will redirect the request to a `Ngrok` server on our local machine then we will tell to that local server to send the request to `localhost:5000`.
+
+### Using Ngrok
+
+To use `Ngrok` is as simple as type the following command on your terminal
+`npx ngrok http 5000`
+
+This will automatically forward any request to the port `5000` in your local machine and if you see on your terminal you are provided with 2 URLs that you can use to target your local from the outside world as long as you have `Ngrok` running on your terminal.
+
+### Testing webhook
+
+To test the `webhook` we need to set a `route handler` that receives the incoming request so we will follow the next steps to create it then test with `Sendgrid` that endpoint
+
+- Go to the `surveyRoutes.js` file in the `server/routes/` directory
+- Create the following `route handler`
+
+  ```js
+  app.post("/api/surveys/webhooks", (req, res) => {
+    console.log(req.body);
+    res.send({});
+  });
+  ```
+
+- Now we need to set `Sendgrid` to send the request. First login to your `Sendgrid` account
+- Then on the left menu of the `dashboard` click on `Settings`
+- Click on the `Mail Settings` option
+- Then click on the `Event webhook` link at the top
+- Now on your terminal run `Ngrok`
+  `npx ngrok http 5000`
+- Copy the `https` URL that `Ngrok` produce for your machine
+- Go back to the `Event webhook` space
+- Paste the `Ngrok` URL and put the `route` that we want to receive the request
+  `https://your_ngrok_domain/api/surveys/webhooks`
+- Go to the bottom of the setting screen and click on the `enable` button
+- An finally click `save`
+- Now run your application do the `survey` creation/send process
+- You should receive an `email`
+- Click on one of the `YES/NO` links
+- After an amount of time, you should see the `body` of the request on your terminal
+
+On the object you will see an `event` property in this case `click` and that represent the particular events that `Sendgrid` can track so you can have multiples events track by `Sendgrid` such as:
+
+- `group_resubcribe`: When someone `re-subscribe` in some email list
+- `unsubscribe`: When someone `unsubscribe` for some email list
+- `spamreport`: When someone issues a `spam report` for your one of your `emails`
+- `bounce`: Any time an `email` fail to send it properly
+- `click`: Any time the `user` click a link on your `email`
+
+#### Note:
+
+- Every time you close the `Ngrok` session and activated again; you should go to the `Sendgrid` dashboard and change the `URL` where the `webhook` will send the notification
+- You can set just one `URL` for an account in the `webhook`
