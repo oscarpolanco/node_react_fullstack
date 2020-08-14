@@ -3778,3 +3778,30 @@ On the object you will see an `event` property in this case `click` and that rep
 
 - Every time you close the `Ngrok` session and activated again; you should go to the `Sendgrid` dashboard and change the `URL` where the `webhook` will send the notification
 - You can set just one `URL` for an account in the `webhook`
+
+### Encoding survey data
+
+At this moment we are receiving information when a `user` click a link on one of our `emails` but is your notice on the object that you receive from `Sendgrid` we actually don't have any information that tells us which link the `user` click and which `survey` that link belongs. To handle this issue we are going to change a little bit the links that we send on our `survey` to have the information that we need.
+
+- First, on your editor go to the `surveyTemplate.js` file in the `server/services/emailTemplates/` directory
+- Update the `YES/NO href` to use the following URLs
+
+  ```js
+  <div>
+    <a href="${keys.redirectDomain}/api/surveys/${survey.id}/yes">Yes</a>
+  </div>
+  <div>
+    <a href="${keys.redirectDomain}/api/surveys/${survey.id}/no">No</a>
+  </div>
+  ```
+
+As you see here we add the `survey id` and the option at the end of the URL
+
+- Now go to the application and do the `create/send` process
+- You should receive an `email`
+- Click on the `YES` or `NO` links
+- You should be redirected to a route that has the structure that we defined on the `surveyTemplate` file. At this moment we don't have a `route handler` for this request so you will have an error
+- Go to your terminal and check the object that `Sendgrid` sends you
+- In the `url` property you should see the link that you were redirected when you click on one of the options.
+
+We will pull that link from the `Sendgrid` object to store the information in our database.
