@@ -3956,3 +3956,46 @@ At this moment we are a little bit clear on the process that we going to follow 
 - You should receive just one object in the array
 - As you see `Sendgrid` continues sending the `request` over and over. That is because we don't respond to `Sendgrig` and it belive that the `request` fails so it will try to resend the `request` until having a response. So add the response on the `route handler`
   `res.send({});`
+
+#### Lodash chain helper
+
+Before we continue is a good time to do a refactor on the `webhook` route handler in other to have a more clean and understandable code. To do this we are gonna move some parts of the logic and use the [chain](https://lodash.com/docs/4.17.15#chain) helper from `lodash` that will give us the opportunity of a calling the `lodash` functions in sequence sending the parameters without the need to explicitly write it in the code.
+
+- First, move the `Path` instance outside the `map` function since we don't need to specify it in every iteration because will always be the same
+
+  ```js
+  const p = new Path("/api/surveys/:surveyId/:choice");
+  const events = _.map(req.body, ({ url, email }) => {});
+  ```
+
+- Remove the `pathname` variable and put it content as a parameter of the `test` function
+  `const match = p.test(new URL(url).pathname);`
+- Now instead of call `const events = _.map` call `const events = _.chain(req.body)`
+- Bellow the `chain` line add `.map` and remove `req.body`
+
+  ```js
+  const events = _.chain(req.body).map(({ url, email }) => {
+    const match = p.test(new URL(url).pathname);
+    if (match) {
+      return { email, surveyID: match.surveyId, choice: match.choice };
+    }
+  });
+  ```
+
+- Now remove the `compactEvents` and `uniqueEvents` variables and put the content bellow the `map` function removing the `events` and the `compactEvents` variables of the functions parameters. Also, add the `value` function at the end.
+
+  ```js
+  const events = _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyID: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .value();
+  ```
+
+- Finally `console.log` the `events` variable and test with an `email`
+- You should see the same object structure as before
