@@ -3805,3 +3805,127 @@ As you see here we add the `survey id` and the option at the end of the URL
 - In the `url` property you should see the link that you were redirected when you click on one of the options.
 
 We will pull that link from the `Sendgrid` object to store the information in our database.
+
+#### Dirty data from webhooks
+
+Before we started to iterate the list of events that we receive of `Sendgird` we need to still think in a couple of things.
+
+- First if a `user` click on one link on an `email` and then click again on the link you will receive 2 separate `events`; one for each click and if you remember is important to our application that count one vote for `user` that why we set a `subdocument` of recipients that have an `email` property and a `vote` property and you need to allow one vote for `survey`. So we have a particular way to prevent duplicates votes but even with this when we are processing the `Sendgrid` array we accidentally can update the vote count in and saved to our database. Before we begin to process the array of objects we need to filter then to eliminate any duplicate click.
+
+- When we do the `webhook` configuration on `Sendgrid` we specify that we need the `click` event but imaging on the future that you need to know about another event so you will have an object that is not an event type `click` so in addition on the pre-processing that we spoke before we need to filter objects that are type `click` to prevent to know about other events.
+
+- Finally, even the event object is type `click` we need some more filtering because we may add more links to the body of our `email`.
+
+#### Procesing pipeline
+
+Now we know that we need to process the data of the event object before using the data. Here are the steps that we are going to follow to do all this processing>
+
+- Consider the following request:
+
+  ```js
+  [
+    {
+      event: 'click'
+      email: 'example@gmail.com'
+      url: 'http://localhost:3000/api/survey/123456789/yes'
+    },
+    {
+      event: 'bounce'
+    },
+    {
+      event: 'click'
+      email: 'example@gmail.com'
+      url: 'http://localhost:5000'
+    },
+    {
+      event: 'click'
+      email: 'example@gmail.com'
+      url: 'http://localhost:3000/api/survey/123456789/yes'
+    }
+  ]
+  ```
+
+  There only one valid event that is the first one. You can confuse with the last one but is a duplicate from the first one.
+
+- To begin the process we first need to use a `map` function on the array that we receive
+- On every single item of the array we are gonna do the following:
+
+  - We will check the `url` property and extract the `route` portion of the `url`
+    from this => `http://localhost:3000/api/survey/123456789/yes`; to this => `/api/survey/123456789/yes`
+  - From the `route` previously extract we will obtain the `survey` id and the `choice`
+    from this => `/api/survey/123456789/yes`; to this => `{ surveyId: '123456789', choice: 'yes' }`
+  - Then returns the `survey id`, `email` and `choice`; discarding records without `survey id` and `choice`
+
+    ```js
+    [
+      {
+        email: "example@gmail.com",
+        surveyId: "123456789",
+        choice: "yes",
+      },
+      undefined,
+      undefined,
+      {
+        email: "example@gmail.com",
+        surveyId: "123456789",
+        choice: "yes",
+      },
+    ];
+    ```
+
+- Then remove the records that are `undefined`
+
+  ```js
+  [
+    {
+      email: "example@gmail.com",
+      surveyId: "123456789",
+      choice: "yes",
+    },
+    {
+      email: "example@gmail.com",
+      surveyId: "123456789",
+      choice: "yes",
+    },
+  ];
+  ```
+
+- Remove records with duplicate `email` and `survey id`
+
+  ```js
+  [
+    {
+      email: "example@gmail.com",
+      surveyId: "123456789",
+      choice: "yes",
+    },
+  ];
+  ```
+
+#### Parsing the route
+
+At this moment we are a little bit clear on the process that we going to follow to extract the information that we need from the `Sendgrid` array of events so let put in practice that approach.
+
+- First, on your terminal in the server directory install `lodash` and `path-parser`
+  `lodash path-parser`
+- Then on your editor go to the `surveyRoutes.js` file on the `routes` directory
+- Now import `lodash`, `path-parser` and `URL` library
+
+  ```js
+  const _ = require("lodash");
+  const { Path } = require("path-parser");
+  const { URL } = require("url");
+  ```
+
+  The `URL` library comes from `node`.
+
+- Now delete the current content of the `/api/surveys/webhooks` route handler
+- Use the `lodash` module to `map` the `req.body`
+  `const events = _.map(req.body, (event) => {})`
+- Now create a new `URL` instance to extract the `pathname` from the `url` of the `event` object
+  `const pathname = new URL(event.url).pathname;`
+- Then create a `Path` intance to extract the `survey id` and `choice` sending this matcher `/api/surveys/:surveyId/:choice` on it constructor
+  `const p = new Path("/api/surveys/:surveyId/:choice");`
+- Finally, use the test function on the `Path` variable sending the `pathname` variable as a parameter and `console.log` it
+  `console.log(p.test(pathname));`
+- Test with an `email` and wait for the `Sendgrid` response. You should see an object with the `survey id` and `choice`
