@@ -3921,11 +3921,38 @@ At this moment we are a little bit clear on the process that we going to follow 
 
 - Now delete the current content of the `/api/surveys/webhooks` route handler
 - Use the `lodash` module to `map` the `req.body`
-  `const events = _.map(req.body, (event) => {})`
+  `const events = _.map(req.body, ({url, email}) => {})`
 - Now create a new `URL` instance to extract the `pathname` from the `url` of the `event` object
-  `const pathname = new URL(event.url).pathname;`
+  `const pathname = new URL(url).pathname;`
 - Then create a `Path` intance to extract the `survey id` and `choice` sending this matcher `/api/surveys/:surveyId/:choice` on it constructor
   `const p = new Path("/api/surveys/:surveyId/:choice");`
-- Finally, use the test function on the `Path` variable sending the `pathname` variable as a parameter and `console.log` it
+- Use the test function on the `Path` variable sending the `pathname` variable as a parameter and `console.log` it
   `console.log(p.test(pathname));`
 - Test with an `email` and wait for the `Sendgrid` response. You should see an object with the `survey id` and `choice`
+- Now do a `match` variable that store the `test` values
+  `const match = p.test(pathname);`
+- Make a condition asking for the value of `match` and if is a valid object returns an object with the `email` and the `match` values
+
+  ```js
+  if (match) {
+    return { email, surveyID: match.surveyId, choice: match.choice };
+  }
+  ```
+
+- Now after the `map` function `console.log` the `events` variable
+  `console.log(events);`
+- Test again with an `email`; clicking on a link
+- You should see an object with the structure that we defined
+- Now we can go to the next step that is to eliminate the possible `undefined` on the `events` array. To do this we will use the `compact` function from `lodash` that check every item of an array and remove all the `undefined` properties
+  `const compactEvents = _.compact(events);`
+- Then we need to eliminate the duplicates of our events. For this, we are going to use the `uniqBy` function from `lodash` that remove the duplicates on an array depending on the parameters that you send
+  `const uniqueEvents = _.uniqBy(compactEvents, "email", "surveyId");`
+
+  In this case, we are telling `uniqBy` that on the `compactEvents` array doesn't allow objects that have the same `email` or `surveyId`
+
+- Now `console.log` the `uniqueEvents` variable
+  `console.log(uniqueEvents);`
+- Test pressing the same link on one of your `emails` several times
+- You should receive just one object in the array
+- As you see `Sendgrid` continues sending the `request` over and over. That is because we don't respond to `Sendgrig` and it belive that the `request` fails so it will try to resend the `request` until having a response. So add the response on the `route handler`
+  `res.send({});`
