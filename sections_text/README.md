@@ -4228,3 +4228,40 @@ Now we think of the `query` that we will use to update our `mongo` database let 
 - Now test sending a mail from the application and click several times in the same link
 - Since we don't have any `console` you need to check the `collection` in `mongo atlas`
 - You should see the `responded` property of that `recipient` as `true` and the `choice` increment just one
+- Now we can add the `lastResponded` property to the `query` so call it in the `update` object using the `Date` object as it value
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          _id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+          lastResponded: new Date(),
+        }
+      ).exec();
+    })
+    .value();
+  ```
+
+- Finally, change the `tank you` route in the `SurveyRoutes` file
+
+  ```js
+  app.get("/api/surveys/:surveyId/:choice", (req, res) => {
+    res.send("Thanks for voting!");
+  });
+  ```
