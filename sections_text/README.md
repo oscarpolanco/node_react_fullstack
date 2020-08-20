@@ -3717,3 +3717,556 @@ Finally, we can work with the last task of the `survey` creation and send on the
   ```
 
 - Finally test the application and at the end you should be redirect to the `dashboard` page
+
+## Section 12: Handling webhooks data
+
+We now have a form that creates a `survey` on the client and a backend `post` request `route handler` to accept that `survey` and send it to the world. So we have 2 big things to work yet; one is to show the `survey` information on the `dashboard` page and the other one is to record the `feedback` that the `user` has when they click the link on the `email`. At this moment we are gonna take care of the second task mention of recording the feedback of the `user`. When we were working on the `post` route handler of the `survey` we spoke a little bit about how we are going to do this. That time we mention that we will enable `click` tracking inside of our `mailer` that will tell `Sendgrid` that replace every single `anchor` tag of the `email` body with a custom link when `Sendgrid` does that if the `user` click on a link; `Sengird` will know who click on a link and which link is clicked and on some point of time `Sendgrid` will send us that information to our `API` that need to process that notification and store it in some place in our `mongo` database. This relationship between `Sendgrid` and our server is called a `webhook`; that is when one server makes a communicate with another server because of some event that occurs.
+
+### Webhooks on development and production
+
+Before to dive in on `webhooks` in a specific enviroment we need to understand `webhooks` specificaly implemented by `Sengrid`. Imaging that a `user` click a link then in a couple secods later another one clicks a link and a third one click a link a couple seconds later after the second one; after each one of this click `Sengrid` records that click event but it doesn't send it imidiatly to our backend server instead `Sengrid` waits and in some amout of time `Sengrid` make a single request to our `API` that said in the last amout of time that they wait here are all the different events that just occur on your different emails.
+
+Now in production; `Sendgrid` every amount of time will send a request to our server on a `post` request to `your_domain/survey/webhooks` so the request gets to our `API` and we process it. The key that makes it sound a little simple is that `Sendgrid` will do a request to a domain that is shared with the world but on development, the history is a little different because every amount of time `Sendgrid` will do a request to `localhost:5000` but this domain is specific for your local machine, in other words, this domain is meaningless to `Sendgirg` so we need an approach that give us the ability to redirect the `webhook` request to our local machine. To do this we will use a package called `Ngrok` that will help us to redirect the `webhook` request to be more specific when `Sendgrid` make a request to a `Ngrok` domain it will redirect the request to a `Ngrok` server on our local machine then we will tell to that local server to send the request to `localhost:5000`.
+
+### Using Ngrok
+
+To use `Ngrok` is as simple as type the following command on your terminal
+`npx ngrok http 5000`
+
+This will automatically forward any request to the port `5000` in your local machine and if you see on your terminal you are provided with 2 URLs that you can use to target your local from the outside world as long as you have `Ngrok` running on your terminal.
+
+### Testing webhook
+
+To test the `webhook` we need to set a `route handler` that receives the incoming request so we will follow the next steps to create it then test with `Sendgrid` that endpoint
+
+#### Set webhook on sendgrid
+
+- Now we need to set `Sendgrid` to send the request. First login to your `Sendgrid` account
+- Then on the left menu of the `dashboard` click on `Settings`
+- Click on the `Mail Settings` option
+- Then click on the `Event webhook` link at the top
+- Now on your terminal run `Ngrok`
+  `npx ngrok http 5000`
+- Copy the `https` URL that `Ngrok` produce for your machine
+- Go back to the `Event webhook` space
+- Paste the `Ngrok` URL and put the `route` that we want to receive the request
+  `https://your_ngrok_domain/api/surveys/webhooks`
+- Go to the bottom of the setting screen and click on the `enable` button
+- An finally click `save`
+
+#### Creating and testing the webhook
+
+- Go to the `surveyRoutes.js` file in the `server/routes/` directory
+- Create the following `route handler`
+
+  ```js
+  app.post("/api/surveys/webhooks", (req, res) => {
+    console.log(req.body);
+    res.send({});
+  });
+  ```
+
+- Now run your application do the `survey` creation/send process
+- You should receive an `email`
+- Click on one of the `YES/NO` links
+- After an amount of time, you should see the `body` of the request on your terminal
+
+On the object you will see an `event` property in this case `click` and that represent the particular events that `Sendgrid` can track so you can have multiples events track by `Sendgrid` such as:
+
+- `group_resubcribe`: When someone `re-subscribe` in some email list
+- `unsubscribe`: When someone `unsubscribe` for some email list
+- `spamreport`: When someone issues a `spam report` for your one of your `emails`
+- `bounce`: Any time an `email` fail to send it properly
+- `click`: Any time the `user` click a link on your `email`
+
+#### Note:
+
+- Every time you close the `Ngrok` session and activated again; you should go to the `Sendgrid` dashboard and change the `URL` where the `webhook` will send the notification
+- You can set just one `URL` for an account in the `webhook`
+
+### Encoding survey data
+
+At this moment we are receiving information when a `user` click a link on one of our `emails` but is your notice on the object that you receive from `Sendgrid` we actually don't have any information that tells us which link the `user` click and which `survey` that link belongs. To handle this issue we are going to change a little bit the links that we send on our `survey` to have the information that we need.
+
+- First, on your editor go to the `surveyTemplate.js` file in the `server/services/emailTemplates/` directory
+- Update the `YES/NO href` to use the following URLs
+
+  ```js
+  <div>
+    <a href="${keys.redirectDomain}/api/surveys/${survey.id}/yes">Yes</a>
+  </div>
+  <div>
+    <a href="${keys.redirectDomain}/api/surveys/${survey.id}/no">No</a>
+  </div>
+  ```
+
+As you see here we add the `survey id` and the option at the end of the URL
+
+- Now go to the application and do the `create/send` process
+- You should receive an `email`
+- Click on the `YES` or `NO` links
+- You should be redirected to a route that has the structure that we defined on the `surveyTemplate` file. At this moment we don't have a `route handler` for this request so you will have an error
+- Go to your terminal and check the object that `Sendgrid` sends you
+- In the `url` property you should see the link that you were redirected when you click on one of the options.
+
+We will pull that link from the `Sendgrid` object to store the information in our database.
+
+#### Dirty data from webhooks
+
+Before we started to iterate the list of events that we receive of `Sendgird` we need to still think in a couple of things.
+
+- First if a `user` click on one link on an `email` and then click again on the link you will receive 2 separate `events`; one for each click and if you remember is important to our application that count one vote for `user` that why we set a `subdocument` of recipients that have an `email` property and a `vote` property and you need to allow one vote for `survey`. So we have a particular way to prevent duplicates votes but even with this when we are processing the `Sendgrid` array we accidentally can update the vote count in and saved to our database. Before we begin to process the array of objects we need to filter then to eliminate any duplicate click.
+
+- When we do the `webhook` configuration on `Sendgrid` we specify that we need the `click` event but imaging on the future that you need to know about another event so you will have an object that is not an event type `click` so in addition on the pre-processing that we spoke before we need to filter objects that are type `click` to prevent to know about other events.
+
+- Finally, even the event object is type `click` we need some more filtering because we may add more links to the body of our `email`.
+
+#### Procesing pipeline
+
+Now we know that we need to process the data of the event object before using the data. Here are the steps that we are going to follow to do all this processing>
+
+- Consider the following request:
+
+  ```js
+  [
+    {
+      event: 'click'
+      email: 'example@gmail.com'
+      url: 'http://localhost:3000/api/survey/123456789/yes'
+    },
+    {
+      event: 'bounce'
+    },
+    {
+      event: 'click'
+      email: 'example@gmail.com'
+      url: 'http://localhost:5000'
+    },
+    {
+      event: 'click'
+      email: 'example@gmail.com'
+      url: 'http://localhost:3000/api/survey/123456789/yes'
+    }
+  ]
+  ```
+
+  There only one valid event that is the first one. You can confuse with the last one but is a duplicate from the first one.
+
+- To begin the process we first need to use a `map` function on the array that we receive
+- On every single item of the array we are gonna do the following:
+
+  - We will check the `url` property and extract the `route` portion of the `url`
+    from this => `http://localhost:3000/api/survey/123456789/yes`; to this => `/api/survey/123456789/yes`
+  - From the `route` previously extract we will obtain the `survey` id and the `choice`
+    from this => `/api/survey/123456789/yes`; to this => `{ surveyId: '123456789', choice: 'yes' }`
+  - Then returns the `survey id`, `email` and `choice`; discarding records without `survey id` and `choice`
+
+    ```js
+    [
+      {
+        email: "example@gmail.com",
+        surveyId: "123456789",
+        choice: "yes",
+      },
+      undefined,
+      undefined,
+      {
+        email: "example@gmail.com",
+        surveyId: "123456789",
+        choice: "yes",
+      },
+    ];
+    ```
+
+- Then remove the records that are `undefined`
+
+  ```js
+  [
+    {
+      email: "example@gmail.com",
+      surveyId: "123456789",
+      choice: "yes",
+    },
+    {
+      email: "example@gmail.com",
+      surveyId: "123456789",
+      choice: "yes",
+    },
+  ];
+  ```
+
+- Remove records with duplicate `email` and `survey id`
+
+  ```js
+  [
+    {
+      email: "example@gmail.com",
+      surveyId: "123456789",
+      choice: "yes",
+    },
+  ];
+  ```
+
+#### Parsing the route
+
+At this moment we are a little bit clear on the process that we going to follow to extract the information that we need from the `Sendgrid` array of events so let put in practice that approach.
+
+- First, on your terminal in the server directory install `lodash` and `path-parser`
+  `lodash path-parser`
+- Then on your editor go to the `surveyRoutes.js` file on the `routes` directory
+- Now import `lodash`, `path-parser` and `URL` library
+
+  ```js
+  const _ = require("lodash");
+  const { Path } = require("path-parser");
+  const { URL } = require("url");
+  ```
+
+  The `URL` library comes from `node`.
+
+- Now delete the current content of the `/api/surveys/webhooks` route handler
+- Use the `lodash` module to `map` the `req.body`
+  `const events = _.map(req.body, ({url, email}) => {})`
+- Now create a new `URL` instance to extract the `pathname` from the `url` of the `event` object
+  `const pathname = new URL(url).pathname;`
+- Then create a `Path` intance to extract the `survey id` and `choice` sending this matcher `/api/surveys/:surveyId/:choice` on it constructor
+  `const p = new Path("/api/surveys/:surveyId/:choice");`
+- Use the test function on the `Path` variable sending the `pathname` variable as a parameter and `console.log` it
+  `console.log(p.test(pathname));`
+- Test with an `email` and wait for the `Sendgrid` response. You should see an object with the `survey id` and `choice`
+- Now do a `match` variable that store the `test` values
+  `const match = p.test(pathname);`
+- Make a condition asking for the value of `match` and if is a valid object returns an object with the `email` and the `match` values
+
+  ```js
+  if (match) {
+    return { email, surveyId: match.surveyId, choice: match.choice };
+  }
+  ```
+
+- Now after the `map` function `console.log` the `events` variable
+  `console.log(events);`
+- Test again with an `email`; clicking on a link
+- You should see an object with the structure that we defined
+- Now we can go to the next step that is to eliminate the possible `undefined` on the `events` array. To do this we will use the `compact` function from `lodash` that check every item of an array and remove all the `undefined` properties
+  `const compactEvents = _.compact(events);`
+- Then we need to eliminate the duplicates of our events. For this, we are going to use the `uniqBy` function from `lodash` that remove the duplicates on an array depending on the parameters that you send
+  `const uniqueEvents = _.uniqBy(compactEvents, "email", "surveyId");`
+
+  In this case, we are telling `uniqBy` that on the `compactEvents` array doesn't allow objects that have the same `email` or `surveyId`
+
+- Now `console.log` the `uniqueEvents` variable
+  `console.log(uniqueEvents);`
+- Test pressing the same link on one of your `emails` several times
+- You should receive just one object in the array
+- As you see `Sendgrid` continues sending the `request` over and over. That is because we don't respond to `Sendgrig` and it belive that the `request` fails so it will try to resend the `request` until having a response. So add the response on the `route handler`
+  `res.send({});`
+
+#### Lodash chain helper
+
+Before we continue is a good time to do a refactor on the `webhook` route handler in other to have a more clean and understandable code. To do this we are gonna move some parts of the logic and use the [chain](https://lodash.com/docs/4.17.15#chain) helper from `lodash` that will give us the opportunity of a calling the `lodash` functions in sequence sending the parameters without the need to explicitly write it in the code.
+
+- First, move the `Path` instance outside the `map` function since we don't need to specify it in every iteration because will always be the same
+
+  ```js
+  const p = new Path("/api/surveys/:surveyId/:choice");
+  const events = _.map(req.body, ({ url, email }) => {});
+  ```
+
+- Remove the `pathname` variable and put it content as a parameter of the `test` function
+  `const match = p.test(new URL(url).pathname);`
+- Now instead of call `const events = _.map` call `const events = _.chain(req.body)`
+- Bellow the `chain` line add `.map` and remove `req.body`
+
+  ```js
+  const events = _.chain(req.body).map(({ url, email }) => {
+    const match = p.test(new URL(url).pathname);
+    if (match) {
+      return { email, surveyId: match.surveyId, choice: match.choice };
+    }
+  });
+  ```
+
+- Now remove the `compactEvents` and `uniqueEvents` variables and put the content bellow the `map` function removing the `events` and the `compactEvents` variables of the functions parameters. Also, add the `value` function at the end.
+
+  ```js
+  const events = _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .value();
+  ```
+
+- Finally `console.log` the `events` variable and test with an `email`
+- You should see the same object structure as before
+
+#### Bad mongoose queries
+
+Now that we process the data that we obtain from the `Sendgrid webhook` we are in a good place to begin to work with the database but there is a crucial thing that we need to notice before. On a normal situation, we will pull the data normally from the `survey` model with one of the functions of `mongoose` like `findById` that will give users a particular `survey` but this will bring us all it `subdocuments recipients` that could be a large number and we will bring a lot of data to search one specific `recipient` then we update what we need and `save` to the database with the `save` function that will send the `survey` data with all the `recipients` again. So we want to prevent this back and forward of data to change one little piece.
+
+#### Finding and updating the correct record
+
+To resolve this issue we need to think about what `query` will help us to prevent the issue. First, we need to think what data we have available to the `query` in this case the `webhook` data:
+
+```js
+email;
+surveyId;
+choice;
+```
+
+From this what `records` we want to update on the `survey model`
+
+`survey`
+
+```js
+id;
+(recipients) => [{ email, responded }];
+yes;
+no;
+```
+
+And with this 2 pieces we can say that we need a `survey` with a given `id` that we got available on the `webhook` data but not only that have a given `id` also need a `recipient` that it `responded` is `false` and both are available on the data that we have. So we will have a `query` that search by the `surveyId`; an `email` and a `responded` property that will let `mongo` to execute all the search logic for us and we never actually take the `server` and pull it back to the `nodeJs` world, in other words, we will write a `query` that gets executed inside of our `mongo` database and never want us to actually load any data back on our `express` side of our application.
+
+So we will have something like this:
+
+- We need a `Survey` instance and will said that need to find one `record` with the `findOne` function
+  `Survey.findOne({})`
+- And that `Survey` should have the `id` that we receive on the `webhook` data
+
+  ```js
+  Survey.findOne({
+    id: surveyId,
+  });
+  ```
+
+- Then the next piece of query logic is to search on the `recipient subdocument` that have the correct `email` and `responded` is `false`
+
+  ```js
+  const email = "example@gmail.com";
+  Survey.findOne({
+    id: surveyId,
+    recipients: {
+      $elemMatch: { email: email, responded: false },
+    },
+  });
+  ```
+
+At this moment we have a `survey` with a given `id` that have a `recipients` property that contains an `array` so go throw all these different elements that match the criteria `{ email: email, responded: false }`
+
+- At this moment we will find the data send it to our `express` server; updating it and returned to `mongo` but maybe we can find the correct `survey` and update it at the same time that is found inside of our `survey` collection. To do this we gonna use `updateOne` instead of `findOne` that will find the `survey` with the same criteria that we defined before and replace it with an object that we send as a second parameter.
+
+  ```js
+  const email = "example@gmail.com";
+  Survey.updateOne(
+    {
+      id: surveyId,
+      recipients: {
+        $elemMatch: { email: email, responded: false },
+      },
+    },
+    {}
+  );
+  ```
+
+  With this, we make sure that the entire `query` is taken care of inside our `mongo` database instance of our `express` server.
+
+- Now we need to figure out how we are going to update the appropriate `survey`. First, we gonna update the `choice` property
+
+  ```js
+  const email = "example@gmail.com";
+  const choice = "yes" || "no";
+
+  Survey.updateOne(
+    {
+      id: surveyId,
+      recipients: {
+        $elemMatch: { email: email, responded: false },
+      },
+    },
+    {
+      $inc: { [choice]: 1 },
+    }
+  );
+  ```
+
+  The `$inc` is what we call a `mongo operator` that allows us to put some logic inside of a `query` in this case will increment a value. We also got the `[choice]` that in `ES6` is called `key interpolation` so this mean that `[choice]` will be change by the actual value of `choice` in this case `yes` or `no` and the `1` is the value that `$inc` will use to increment the value of the `yes` or `no` property.
+
+- Now we need to take the `recipient` that is found and update it
+
+  ```js
+  const email = "example@gmail.com";
+  const choice = "yes" || "no";
+
+  Survey.updateOne(
+    {
+      id: surveyId,
+      recipients: {
+        $elemMatch: { email: email, responded: false },
+      },
+    },
+    {
+      $inc: { [choice]: 1 },
+      $set: { "recipients.$.responded": true },
+    }
+  );
+  ```
+
+  We make use of another `mongo operator` call `$set` that will update one of the properties that we found on the previews `query`. The key that we use on the `$set` configuration object say that on the `recipients` property that is a `subdocument collection` and inside of the `subdocument` collection are a bunch of `records` so to make sure that we update the correct `recipient` we put a `.$.` and that `$` lines up with the `$elemMatch: { email: email, responded: false }` from the original `query` in other words what we found with the `$elemMatch` is replaced on the `.$.` then look to the corresponded property in this case `responded` and set it to `true`
+
+#### Executing the query
+
+Now we think of the `query` that we will use to update our `mongo` database let use it on our `route handler`
+
+- First copy the `query` that we did
+- Then on your editor go to the `surveyRoutes` file
+- Now delete the `const events =` and the `console.log(events)` since we are not returning any data from `mongo` and we don't need any data to respond to `Sendgrid`
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .value();
+  ```
+
+- Since we want to execute the `query` on every item on the array of `events` we can add the `query` on the chain of `lodash` functions. At this case, we are going to use the `each` function to run the `query` on `each` element also use destructuring to have the correct values for the `query`
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+        }
+      );
+    })
+    .value();
+  ```
+
+- Now update the `id` property of the `query` for `_id`
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          _id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+        }
+      );
+    })
+    .value();
+  ```
+
+  On the `MongoDB` world internally all our `records` are using an `_id` property not an `id` property so every time we do a `query` to `mongo` you need to say `_id`. The reason that we are able to use `id` in other places is that `mongoose` automatically will respect the `id` property
+
+- Now after we close the `query` parenthesis add the `exec` function
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          _id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+        }
+      ).exec();
+    })
+    .value();
+  ```
+
+  Just putting the `query` doesn't actually execute it so we need the help of the `exec` function to actually execute the `query`. Another thing is that you may notice that the `query` is an `async` operation and we don't wait for its value; this is because we actually don't need to respond with any kind of data the `request` so we don't need to add the `async/await` keyword.
+
+- Now test sending a mail from the application and click several times in the same link
+- Since we don't have any `console` you need to check the `collection` in `mongo atlas`
+- You should see the `responded` property of that `recipient` as `true` and the `choice` increment just one
+- Now we can add the `lastResponded` property to the `query` so call it in the `update` object using the `Date` object as it value
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          _id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+          lastResponded: new Date(),
+        }
+      ).exec();
+    })
+    .value();
+  ```
+
+- Finally, change the `tank you` route in the `SurveyRoutes` file
+
+  ```js
+  app.get("/api/surveys/:surveyId/:choice", (req, res) => {
+    res.send("Thanks for voting!");
+  });
+  ```
