@@ -3739,15 +3739,7 @@ This will automatically forward any request to the port `5000` in your local mac
 
 To test the `webhook` we need to set a `route handler` that receives the incoming request so we will follow the next steps to create it then test with `Sendgrid` that endpoint
 
-- Go to the `surveyRoutes.js` file in the `server/routes/` directory
-- Create the following `route handler`
-
-  ```js
-  app.post("/api/surveys/webhooks", (req, res) => {
-    console.log(req.body);
-    res.send({});
-  });
-  ```
+#### Set webhook on sendgrid
 
 - Now we need to set `Sendgrid` to send the request. First login to your `Sendgrid` account
 - Then on the left menu of the `dashboard` click on `Settings`
@@ -3761,6 +3753,19 @@ To test the `webhook` we need to set a `route handler` that receives the incomin
   `https://your_ngrok_domain/api/surveys/webhooks`
 - Go to the bottom of the setting screen and click on the `enable` button
 - An finally click `save`
+
+#### Creating and testing the webhook
+
+- Go to the `surveyRoutes.js` file in the `server/routes/` directory
+- Create the following `route handler`
+
+  ```js
+  app.post("/api/surveys/webhooks", (req, res) => {
+    console.log(req.body);
+    res.send({});
+  });
+  ```
+
 - Now run your application do the `survey` creation/send process
 - You should receive an `email`
 - Click on one of the `YES/NO` links

@@ -23,6 +23,7 @@
 - [StripeCheckout](https://www.npmjs.com/package/react-stripe-checkout) for the payment process on the client
 - [Stripe](https://www.npmjs.com/package/stripe) for the payment process on the backend
 - [Sendgrid](https://www.npmjs.com/package/sendgrid) to send `emails`
+- [Ngork](https://ngrok.com/) to test the `webhook` locally
 
 ## Pages
 
@@ -55,3 +56,9 @@
 - Install all the `client` dependencies using: `npm install`
 - Go back to the `server` directory
 - Run both `server` using `npm run dev`
+- On another tap of your terminal run `Ngrok`: `npx ngrok http 5000`
+- Copy the `https` link that `Ngrok` sends to you
+- Set the `Sendgrid webhook` with that URL and the `webhook` route of the application
+  `https://my_ngrok_url/api/surveys/webhooks`
+
+  [Here](https://github.com/oscarpolanco/node_react_fullstack/blob/master/sections_text/README.md#set-webhook-on-sendgrid) are the steps to set the `Sendgrid webhook`
