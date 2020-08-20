@@ -3935,7 +3935,7 @@ At this moment we are a little bit clear on the process that we going to follow 
 
   ```js
   if (match) {
-    return { email, surveyID: match.surveyId, choice: match.choice };
+    return { email, surveyId: match.surveyId, choice: match.choice };
   }
   ```
 
@@ -3977,7 +3977,7 @@ Before we continue is a good time to do a refactor on the `webhook` route handle
   const events = _.chain(req.body).map(({ url, email }) => {
     const match = p.test(new URL(url).pathname);
     if (match) {
-      return { email, surveyID: match.surveyId, choice: match.choice };
+      return { email, surveyId: match.surveyId, choice: match.choice };
     }
   });
   ```
@@ -3989,7 +3989,7 @@ Before we continue is a good time to do a refactor on the `webhook` route handle
     .map(({ url, email }) => {
       const match = p.test(new URL(url).pathname);
       if (match) {
-        return { email, surveyID: match.surveyId, choice: match.choice };
+        return { email, surveyId: match.surveyId, choice: match.choice };
       }
     })
     .compact()
@@ -3999,3 +3999,232 @@ Before we continue is a good time to do a refactor on the `webhook` route handle
 
 - Finally `console.log` the `events` variable and test with an `email`
 - You should see the same object structure as before
+
+#### Bad mongoose queries
+
+Now that we process the data that we obtain from the `Sendgrid webhook` we are in a good place to begin to work with the database but there is a crucial thing that we need to notice before. On a normal situation, we will pull the data normally from the `survey` model with one of the functions of `mongoose` like `findById` that will give users a particular `survey` but this will bring us all it `subdocuments recipients` that could be a large number and we will bring a lot of data to search one specific `recipient` then we update what we need and `save` to the database with the `save` function that will send the `survey` data with all the `recipients` again. So we want to prevent this back and forward of data to change one little piece.
+
+#### Finding and updating the correct record
+
+To resolve this issue we need to think about what `query` will help us to prevent the issue. First, we need to think what data we have available to the `query` in this case the `webhook` data:
+
+```js
+email;
+surveyId;
+choice;
+```
+
+From this what `records` we want to update on the `survey model`
+
+`survey`
+
+```js
+id;
+(recipients) => [{ email, responded }];
+yes;
+no;
+```
+
+And with this 2 pieces we can say that we need a `survey` with a given `id` that we got available on the `webhook` data but not only that have a given `id` also need a `recipient` that it `responded` is `false` and both are available on the data that we have. So we will have a `query` that search by the `surveyId`; an `email` and a `responded` property that will let `mongo` to execute all the search logic for us and we never actually take the `server` and pull it back to the `nodeJs` world, in other words, we will write a `query` that gets executed inside of our `mongo` database and never want us to actually load any data back on our `express` side of our application.
+
+So we will have something like this:
+
+- We need a `Survey` instance and will said that need to find one `record` with the `findOne` function
+  `Survey.findOne({})`
+- And that `Survey` should have the `id` that we receive on the `webhook` data
+
+  ```js
+  Survey.findOne({
+    id: surveyId,
+  });
+  ```
+
+- Then the next piece of query logic is to search on the `recipient subdocument` that have the correct `email` and `responded` is `false`
+
+  ```js
+  const email = "example@gmail.com";
+  Survey.findOne({
+    id: surveyId,
+    recipients: {
+      $elemMatch: { email: email, responded: false },
+    },
+  });
+  ```
+
+At this moment we have a `survey` with a given `id` that have a `recipients` property that contains an `array` so go throw all these different elements that match the criteria `{ email: email, responded: false }`
+
+- At this moment we will find the data send it to our `express` server; updating it and returned to `mongo` but maybe we can find the correct `survey` and update it at the same time that is found inside of our `survey` collection. To do this we gonna use `updateOne` instead of `findOne` that will find the `survey` with the same criteria that we defined before and replace it with an object that we send as a second parameter.
+
+  ```js
+  const email = "example@gmail.com";
+  Survey.updateOne(
+    {
+      id: surveyId,
+      recipients: {
+        $elemMatch: { email: email, responded: false },
+      },
+    },
+    {}
+  );
+  ```
+
+  With this, we make sure that the entire `query` is taken care of inside our `mongo` database instance of our `express` server.
+
+- Now we need to figure out how we are going to update the appropriate `survey`. First, we gonna update the `choice` property
+
+  ```js
+  const email = "example@gmail.com";
+  const choice = "yes" || "no";
+
+  Survey.updateOne(
+    {
+      id: surveyId,
+      recipients: {
+        $elemMatch: { email: email, responded: false },
+      },
+    },
+    {
+      $inc: { [choice]: 1 },
+    }
+  );
+  ```
+
+  The `$inc` is what we call a `mongo operator` that allows us to put some logic inside of a `query` in this case will increment a value. We also got the `[choice]` that in `ES6` is called `key interpolation` so this mean that `[choice]` will be change by the actual value of `choice` in this case `yes` or `no` and the `1` is the value that `$inc` will use to increment the value of the `yes` or `no` property.
+
+- Now we need to take the `recipient` that is found and update it
+
+  ```js
+  const email = "example@gmail.com";
+  const choice = "yes" || "no";
+
+  Survey.updateOne(
+    {
+      id: surveyId,
+      recipients: {
+        $elemMatch: { email: email, responded: false },
+      },
+    },
+    {
+      $inc: { [choice]: 1 },
+      $set: { "recipients.$.responded": true },
+    }
+  );
+  ```
+
+  We make use of another `mongo operator` call `$set` that will update one of the properties that we found on the previews `query`. The key that we use on the `$set` configuration object say that on the `recipients` property that is a `subdocument collection` and inside of the `subdocument` collection are a bunch of `records` so to make sure that we update the correct `recipient` we put a `.$.` and that `$` lines up with the `$elemMatch: { email: email, responded: false }` from the original `query` in other words what we found with the `$elemMatch` is replaced on the `.$.` then look to the corresponded property in this case `responded` and set it to `true`
+
+#### Executing the query
+
+Now we think of the `query` that we will use to update our `mongo` database let use it on our `route handler`
+
+- First copy the `query` that we did
+- Then on your editor go to the `surveyRoutes` file
+- Now delete the `const events =` and the `console.log(events)` since we are not returning any data from `mongo` and we don't need any data to respond to `Sendgrid`
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .value();
+  ```
+
+- Since we want to execute the `query` on every item on the array of `events` we can add the `query` on the chain of `lodash` functions. At this case, we are going to use the `each` function to run the `query` on `each` element also use destructuring to have the correct values for the `query`
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+        }
+      );
+    })
+    .value();
+  ```
+
+- Now update the `id` property of the `query` for `_id`
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          _id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+        }
+      );
+    })
+    .value();
+  ```
+
+  On the `MongoDB` world internally all our `records` are using an `_id` property not an `id` property so every time we do a `query` to `mongo` you need to say `_id`. The reason that we are able to use `id` in other places is that `mongoose` automatically will respect the `id` property
+
+- Now after we close the `query` parenthesis add the `exec` function
+
+  ```js
+  _.chain(req.body)
+    .map(({ url, email }) => {
+      const match = p.test(new URL(url).pathname);
+      if (match) {
+        return { email, surveyId: match.surveyId, choice: match.choice };
+      }
+    })
+    .compact()
+    .uniqBy("email", "surveyId")
+    .each(({ surveyId, email, choice }) => {
+      Survey.updateOne(
+        {
+          _id: surveyId,
+          recipients: {
+            $elemMatch: { email: email, responded: false },
+          },
+        },
+        {
+          $inc: { [choice]: 1 },
+          $set: { "recipients.$.responded": true },
+        }
+      ).exec();
+    })
+    .value();
+  ```
+
+  Just putting the `query` doesn't actually execute it so we need the help of the `exec` function to actually execute the `query`. Another thing is that you may notice that the `query` is an `async` operation and we don't wait for its value; this is because we actually don't need to respond with any kind of data the `request` so we don't need to add the `async/await` keyword.
+
+- Now test sending a mail from the application and click several times in the same link
+- Since we don't have any `console` you need to check the `collection` in `mongo atlas`
+- You should see the `responded` property of that `recipient` as `true` and the `choice` increment just one
