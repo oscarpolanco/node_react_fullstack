@@ -4437,3 +4437,49 @@ Now we are going to create the components that we need and wiring up them with `
   ```
 
 - Test on your browser and you should see the new message on the `dashboard` page and on the `network` tap on the browser `console` that we got the `surveys` request
+
+#### Rendering the list of surveys
+
+Here we use some of the classes of the [card](https://materializecss.com/cards.html) that `materialize-css` provide for use.
+
+- First on the `SurveyList` file create a function call `renderSurveys`
+  `renderSurveys() {...}`
+- Then `map` throw the `surveys` props
+
+  ```js
+  renderSurveys() {
+    return this.props.surveys.map((survey) => {...}
+  }
+  ```
+
+- Inside of the `map` function copy the following code:
+
+  ```js
+  renderSurveys() {
+    return this.props.surveys.map((survey) => {
+      return (
+        <div className="card darken-1" key={survey._id}>
+          <div className="card-content">
+            <span className="card-title">{survey.title}</span>
+            <p>{survey.body}</p>
+            <div>Sent On: {new Date(survey.dateSent).toLocaleDateString()}</div>
+          </div>
+          <div className="card-action">
+            <a>Yes: {survey.yes}</a>
+            <a>No: {survey.no}</a>
+          </div>
+        </div>
+      );
+    });
+  }
+  ```
+
+- Now eliminate the `SurveyList` message on the `render` function and add the `renderSurveys` function
+
+  ```js
+  render() {
+    return <div>{this.renderSurveys()}</div>;
+  }
+  ```
+
+- Finally, test on your browser
