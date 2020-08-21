@@ -4377,3 +4377,63 @@ We already finish with the server-side so we can continue with the client. The f
   ```
 
 This finish our `redux` setup for the `surveys`. Now we just need to use it on the corresponding component.
+
+### Wiring up React to Redux
+
+Now we are going to create the components that we need and wiring up them with `redux` so let begin
+
+- Go to the `surveys` directory and create a new file call `SurveyList.js`
+- import `react` and `components` from `react`; `connect` from `react-redux` and `fetchSurveys` from our `action` directory
+
+  ```js
+  import React, { Component } from "react";
+  import { connect } from "react-redux";
+  import { fetchSurveys } from "../../actions";
+  ```
+
+- Now create a class base component call `SurveyList`
+  `class SurveyList extends Component {...}`
+- Then we are going to need to get the `survey` list every time the component renders so we will use a lifecycle method call `componentDidMount` and call the `fetchSurveys` prop
+
+  ```js
+  componentDidMount() {
+    this.props.fetchSurveys();
+  }
+  ```
+
+- Call the render function with some test
+
+  ```js
+  render() {
+    return <div>SurveyList</div>;
+  }
+  ```
+
+- Now create the `mapStateToProps` function with the `surveys` state as a parameter
+
+  ```js
+  function mapStateToProps({ surveys }) {
+    return { surveys };
+  }
+  ```
+
+- Export default the component with the `connect` function as we use before
+  `export default connect(mapStateToProps, { fetchSurveys })(SurveyList);`
+- Now go to the `Dashboard.js` component and import the `SurveyList` component
+  `import SurveyList from "./surveys/SurveyList";`
+- Remove the `Dashboard` message and add the `SurveyList` component
+
+  ```js
+  return (
+    <div>
+      <SurveyList />
+      <div className="fixed-action-btn">
+        <Link to="/surveys/new" className="btn-floating btn-large red">
+          <i className="material-icons">add</i>
+        </Link>
+      </div>
+    </div>
+  );
+  ```
+
+- Test on your browser and you should see the new message on the `dashboard` page and on the `network` tap on the browser `console` that we got the `surveys` request
