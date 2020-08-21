@@ -4327,3 +4327,53 @@ Now we can test the endpoint to see if we got what we need. Remember that a long
 `axios.get('/api/surveys')`
 
 Then go to the `network` tag and you should see a `survey` respond with the information of all the `surveys` of that particular `user`.
+
+### Wiring surveys up to redux
+
+We already finish with the server-side so we can continue with the client. The first thing we need to do is add all the logic necessary so `redux` know about the `surveys` that we intend to pull in to the client.
+
+- First, go to the `type.js` file on the `actions` directory and add the following type
+  `export const FETCH_SURVEYS = "fetch_surveys";`
+- Then go to the `index.js` in the same `action` directory and import the `type` that we create
+  `import { FETCH_USERS, FETCH_SURVEYS } from "./types";`
+- Add `fetch_surveys` function that do a `get` request to `/api/survey` and returns the `dispatch` with an object with the `type` abd the `payload` data
+
+  ```js
+  export const fetchSurveys = () => async (dispatch) => {
+    const res = await axios.get("/api/surveys");
+
+    dispatch({ type: FETCH_SURVEYS, payload: res.data });
+  };
+  ```
+
+- Now go to the `reducres` directory and create a new file call `surveyReducer.js`
+- Import the type that we create before
+  `import { FETCH_SURVEYS } from "../actions/types";`
+- Create and export a function that recive an `state` and an `action`. In this case our default `state` will be an empty array for the `surveys`
+  `export default function (state = [], action) {...}`
+- Now on the function create a `switch` that recive an `action.type` with a `case` for `FETCH_SURVEYS` and a `default` case. On the `FETCH_SURVEYS` return the `action.payload`
+
+  ```js
+  export default function (state = [], action) {
+    switch (action.type) {
+      case FETCH_SURVEYS:
+        return action.payload;
+      default:
+        return state;
+    }
+  }
+  ```
+
+- Then go to the `index.js` file in the `reducers` directory and import the `reducer` that we create before
+  `import surveysReducer from "./surveysReducer";`
+- Add the `surveys` state on the `combineReducers`
+
+  ```js
+  export default combineReducers({
+    auth: authReducer,
+    form: reduxForm,
+    surveys: surveysReducer,
+  });
+  ```
+
+This finish our `redux` setup for the `surveys`. Now we just need to use it on the corresponding component.
