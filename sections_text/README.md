@@ -4270,3 +4270,218 @@ Now we think of the `query` that we will use to update our `mongo` database let 
     res.send("Thanks for voting!");
   });
   ```
+
+## Section 13: The home stretch
+
+Finally, we get to the last feature of the application that is to show the `user` all the information of his `surveys` in the `dashboard` page. We will show to the `user` just:
+
+- The name of the campaign
+- Number of `YES`
+- Number of `NO`
+- Last response
+
+And we show this for each of it `surveys`. So let get to work!!!!
+
+- On your editor go to the `surveyRoutes` file
+- Add a `get` request for the `/api/surveys` route
+  `app.get("/api/surveys", async (req, res) => {...}`
+- Now we need to make sure that the `user` is logged in so we need to reuse the `requireLogin` middleware
+  `app.get("/api/surveys", requireLogin, async (req, res) => {...}`
+- Then we need to make a query to the database to get all the `surveys` of a specific `user`. So we are gonna use the `find` method that just needs to do a configuration object with the field and the match criteria that you need and since this is an asynchronous operation we will need to put the `async/await` keyword
+
+  ```js
+  app.get("/api/surveys", requireLogin, async (req, res) => {
+    const surveys = await Survey.find({ _user: req.user.id });
+  });
+  ```
+
+- We need to respond with the `surveys` that we found
+
+  ```js
+  app.get("/api/surveys", requireLogin, async (req, res) => {
+    const surveys = await Survey.find({ _user: req.user.id });
+
+    res.send(surveys);
+  });
+  ```
+
+But as you may remember in the previews section we will bring a lot of data from `mongo` doing things this way like a long list of `recipients` that we actually don't need and on the future when the application grows can be an issue. So we need to think a how we gonna pull from `mongo` just the data that we need.
+
+### Whitelisting model fields
+
+To handle the issue that we previously point out we are going to use a method called `select`. If we check the [mongoose](https://mongoosejs.com/docs/api/query.html#query_Query-select) documentation we see that an instance of a `Query` has this method and as you may realize the `find` function returns a `Query` instance so we can call the `select` method in a chain of what we already have.
+
+```js
+const surveys = await Survey.find({ _user: req.user.id }).select({...});
+```
+
+Inside of the configuration object we just need to add what fields we want or not to have in the `query` result. In this case, we don't want the `recipients`
+
+```js
+const surveys = await Survey.find({ _user: req.user.id }).select({
+  recipients: false,
+});
+```
+
+Now we can test the endpoint to see if we got what we need. Remember that a long time ago we make `Axios` available on the browser; we can still use it to test this route. So run the application and go to the `console` of the browser then put the following:
+`axios.get('/api/surveys')`
+
+Then go to the `network` tag and you should see a `survey` respond with the information of all the `surveys` of that particular `user`.
+
+### Wiring surveys up to redux
+
+We already finish with the server-side so we can continue with the client. The first thing we need to do is add all the logic necessary so `redux` know about the `surveys` that we intend to pull in to the client.
+
+- First, go to the `type.js` file on the `actions` directory and add the following type
+  `export const FETCH_SURVEYS = "fetch_surveys";`
+- Then go to the `index.js` in the same `action` directory and import the `type` that we create
+  `import { FETCH_USERS, FETCH_SURVEYS } from "./types";`
+- Add `fetch_surveys` function that do a `get` request to `/api/survey` and returns the `dispatch` with an object with the `type` abd the `payload` data
+
+  ```js
+  export const fetchSurveys = () => async (dispatch) => {
+    const res = await axios.get("/api/surveys");
+
+    dispatch({ type: FETCH_SURVEYS, payload: res.data });
+  };
+  ```
+
+- Now go to the `reducres` directory and create a new file call `surveyReducer.js`
+- Import the type that we create before
+  `import { FETCH_SURVEYS } from "../actions/types";`
+- Create and export a function that recive an `state` and an `action`. In this case our default `state` will be an empty array for the `surveys`
+  `export default function (state = [], action) {...}`
+- Now on the function create a `switch` that recive an `action.type` with a `case` for `FETCH_SURVEYS` and a `default` case. On the `FETCH_SURVEYS` return the `action.payload`
+
+  ```js
+  export default function (state = [], action) {
+    switch (action.type) {
+      case FETCH_SURVEYS:
+        return action.payload;
+      default:
+        return state;
+    }
+  }
+  ```
+
+- Then go to the `index.js` file in the `reducers` directory and import the `reducer` that we create before
+  `import surveysReducer from "./surveysReducer";`
+- Add the `surveys` state on the `combineReducers`
+
+  ```js
+  export default combineReducers({
+    auth: authReducer,
+    form: reduxForm,
+    surveys: surveysReducer,
+  });
+  ```
+
+This finish our `redux` setup for the `surveys`. Now we just need to use it on the corresponding component.
+
+### Wiring up React to Redux
+
+Now we are going to create the components that we need and wiring up them with `redux` so let begin
+
+- Go to the `surveys` directory and create a new file call `SurveyList.js`
+- import `react` and `components` from `react`; `connect` from `react-redux` and `fetchSurveys` from our `action` directory
+
+  ```js
+  import React, { Component } from "react";
+  import { connect } from "react-redux";
+  import { fetchSurveys } from "../../actions";
+  ```
+
+- Now create a class base component call `SurveyList`
+  `class SurveyList extends Component {...}`
+- Then we are going to need to get the `survey` list every time the component renders so we will use a lifecycle method call `componentDidMount` and call the `fetchSurveys` prop
+
+  ```js
+  componentDidMount() {
+    this.props.fetchSurveys();
+  }
+  ```
+
+- Call the render function with some test
+
+  ```js
+  render() {
+    return <div>SurveyList</div>;
+  }
+  ```
+
+- Now create the `mapStateToProps` function with the `surveys` state as a parameter
+
+  ```js
+  function mapStateToProps({ surveys }) {
+    return { surveys };
+  }
+  ```
+
+- Export default the component with the `connect` function as we use before
+  `export default connect(mapStateToProps, { fetchSurveys })(SurveyList);`
+- Now go to the `Dashboard.js` component and import the `SurveyList` component
+  `import SurveyList from "./surveys/SurveyList";`
+- Remove the `Dashboard` message and add the `SurveyList` component
+
+  ```js
+  return (
+    <div>
+      <SurveyList />
+      <div className="fixed-action-btn">
+        <Link to="/surveys/new" className="btn-floating btn-large red">
+          <i className="material-icons">add</i>
+        </Link>
+      </div>
+    </div>
+  );
+  ```
+
+- Test on your browser and you should see the new message on the `dashboard` page and on the `network` tap on the browser `console` that we got the `surveys` request
+
+#### Rendering the list of surveys
+
+Here we use some of the classes of the [card](https://materializecss.com/cards.html) that `materialize-css` provide for use.
+
+- First on the `SurveyList` file create a function call `renderSurveys`
+  `renderSurveys() {...}`
+- Then `map` throw the `surveys` props
+
+  ```js
+  renderSurveys() {
+    return this.props.surveys.map((survey) => {...}
+  }
+  ```
+
+- Inside of the `map` function copy the following code:
+
+  ```js
+  renderSurveys() {
+    return this.props.surveys.map((survey) => {
+      return (
+        <div className="card darken-1" key={survey._id}>
+          <div className="card-content">
+            <span className="card-title">{survey.title}</span>
+            <p>{survey.body}</p>
+            <div>Sent On: {new Date(survey.dateSent).toLocaleDateString()}</div>
+          </div>
+          <div className="card-action">
+            <a>Yes: {survey.yes}</a>
+            <a>No: {survey.no}</a>
+          </div>
+        </div>
+      );
+    });
+  }
+  ```
+
+- We actually want the last `survey` that we send is the first that we see on the `dashboard` page so we will need to use the `reverse` function before `map` throw the elements
+  `return this.props.surveys.reverse().map((survey) => {...}`
+- Now eliminate the `SurveyList` message on the `render` function and add the `renderSurveys` function
+
+  ```js
+  render() {
+    return <div>{this.renderSurveys()}</div>;
+  }
+  ```
+
+- Finally, test on your browser
