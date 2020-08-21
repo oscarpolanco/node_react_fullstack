@@ -4270,3 +4270,39 @@ Now we think of the `query` that we will use to update our `mongo` database let 
     res.send("Thanks for voting!");
   });
   ```
+
+## Section 13: The home stretch
+
+Finally, we get to the last feature of the application that is to show the `user` all the information of his `surveys` in the `dashboard` page. We will show to the `user` just:
+
+- The name of the campaign
+- Number of `YES`
+- Number of `NO`
+- Last response
+
+And we show this for each of it `surveys`. So let get to work!!!!
+
+- On your editor go to the `surveyRoutes` file
+- Add a `get` request for the `/api/surveys` route
+  `app.get("/api/surveys", async (req, res) => {...}`
+- Now we need to make sure that the `user` is logged in so we need to reuse the `requireLogin` middleware
+  `app.get("/api/surveys", requireLogin, async (req, res) => {...}`
+- Then we need to make a query to the database to get all the `surveys` of a specific `user`. So we are gonna use the `find` method that just needs to do a configuration object with the field and the match criteria that you need and since this is an asynchronous operation we will need to put the `async/await` keyword
+
+  ```js
+  app.get("/api/surveys", requireLogin, async (req, res) => {
+    const surveys = await Survey.find({ _user: req.user.id });
+  });
+  ```
+
+- We need to respond with the `surveys` that we found
+
+  ```js
+  app.get("/api/surveys", requireLogin, async (req, res) => {
+    const surveys = await Survey.find({ _user: req.user.id });
+
+    res.send(surveys);
+  });
+  ```
+
+But as you may remember in the previews section we will bring a lot of data from `mongo` doing things this way like a long list of `recipients` that we actually don't need and on the future when the application grows can be an issue. So we need to think a how we gonna pull from `mongo` just the data that we need.
