@@ -4306,3 +4306,24 @@ And we show this for each of it `surveys`. So let get to work!!!!
   ```
 
 But as you may remember in the previews section we will bring a lot of data from `mongo` doing things this way like a long list of `recipients` that we actually don't need and on the future when the application grows can be an issue. So we need to think a how we gonna pull from `mongo` just the data that we need.
+
+### Whitelisting model fields
+
+To handle the issue that we previously point out we are going to use a method called `select`. If we check the [mongoose](https://mongoosejs.com/docs/api/query.html#query_Query-select) documentation we see that an instance of a `Query` has this method and as you may realize the `find` function returns a `Query` instance so we can call the `select` method in a chain of what we already have.
+
+```js
+const surveys = await Survey.find({ _user: req.user.id }).select({...});
+```
+
+Inside of the configuration object we just need to add what fields we want or not to have in the `query` result. In this case, we don't want the `recipients`
+
+```js
+const surveys = await Survey.find({ _user: req.user.id }).select({
+  recipients: false,
+});
+```
+
+Now we can test the endpoint to see if we got what we need. Remember that a long time ago we make `Axios` available on the browser; we can still use it to test this route. So run the application and go to the `console` of the browser then put the following:
+`axios.get('/api/surveys')`
+
+Then go to the `network` tag and you should see a `survey` respond with the information of all the `surveys` of that particular `user`.
