@@ -4474,6 +4474,8 @@ Here we use some of the classes of the [card](https://materializecss.com/cards.h
   }
   ```
 
+- We actually want the last `survey` that we send is the first that we see on the `dashboard` page so we will need to use the `reverse` function before `map` throw the elements
+  `return this.props.surveys.reverse().map((survey) => {...}`
 - Now eliminate the `SurveyList` message on the `render` function and add the `renderSurveys` function
 
   ```js
