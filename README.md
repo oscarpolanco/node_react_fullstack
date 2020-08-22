@@ -1,5 +1,7 @@
 # Node & React fullstack development project
 
+This application is inspired by the [Node with React: Fullstack Web Development](https://www.udemy.com/course/node-with-react-fullstack-web-development/) course but you will see that the application will be updated and have some new features that are not part of the course. Feel free to fork this repository and play around with it then share your experience with me so we both can learn.
+
 ## Requiretments
 
 - [Nodejs](https://nodejs.org/en/)
