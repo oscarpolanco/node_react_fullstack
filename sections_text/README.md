@@ -4485,3 +4485,5 @@ Here we use some of the classes of the [card](https://materializecss.com/cards.h
   ```
 
 - Finally, test on your browser
+
+Finally, we finished our goals for this app but this is just the beginning of our journey because will be your job to expand and refactor the app. Good look and thanks for reading this.
