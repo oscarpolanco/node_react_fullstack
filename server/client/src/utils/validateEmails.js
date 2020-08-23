@@ -3,9 +3,8 @@ export default (emails) => {
   const invalidEmails = emails
     .split(",")
     .map((email) => email.trim())
-    .filter((email) => {
-      if (email.length) return re.test(email) === false;
-    });
+    .filter(Boolean)
+    .filter((email) => re.test(email) === false);
 
   if (invalidEmails.length) {
     return `These emails are invalid: ${invalidEmails}`;
