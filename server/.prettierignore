@@ -1,0 +1,5 @@
+# project
+node_modules
+build
+coverage
+/client/src/serviceWorker.js
