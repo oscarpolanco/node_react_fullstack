@@ -4487,3 +4487,32 @@ Here we use some of the classes of the [card](https://materializecss.com/cards.h
 - Finally, test on your browser
 
 Finally, we finished our goals for this app but this is just the beginning of our journey because will be your job to expand and refactor the app. Good look and thanks for reading this.
+
+## Git workflow
+
+On this repository I going to implement a `git workflow` that will allow us to accomplish our goals on a consitent and productive manner using git in the most effective way that we can. I defined the following specifications
+
+- Our main branch will be call `master`
+- Create your working branch with `master` as it base
+- We will have only one branch for `feature / issue`
+- We will have one commit for `feature / issue`
+- The single `commit` of your working branch should have a descriptive message (Later we are going are going to talk more on this subject)
+- The new `commit` should be on the top of the`commit` history
+- Your working branch needs to be up to date with `master`. You can use `rebase` to this matter
+- When you create a `Pull Request` with your working branch should be against`master`
+- To merge a `Pull request` should be`approve` for at least one of the approve reviewrs of this repository
+- Allways use the `squash and merge` or`rebase and merge` options when the `Pull Request` is approved
+- When we are ready to deploy to production; create a `tag` version and uploaded to`github`. [Here](https://git-scm.com/book/en/v2/Git-Basics-Tagging) are the steps to create a tag
+- We are gonna use [semantic versioning](https://semver.org/) for the tag name
+- Use the `Github` interface to publish a`release`. [Here](https://docs.github.com/en/enterprise/2.13/user/articles/creating-releases) are the steps to pusblish a `release` using the`Github` interface
+- Need to put a message with all commits related to the `release` on the description section
+- Use the tag to deploy to production
+
+### Notes:
+
+- Later we will automate this process
+- We need to investiage how to deploy to a `Heroku` app using a tag
+
+Here is a visual representation of the workflow:
+
+![git workflow](/sections_text/img/gitworkflow.png)
