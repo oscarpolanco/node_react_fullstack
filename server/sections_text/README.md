@@ -57,8 +57,8 @@ When you're running a server on your local machine you're gonna be receiving `HT
 - Use the instance of `express` to handle a incoming request (in this example we use the `get` function to listen all request that came from `/`)
 
 ```js
-app.get("/", (req, res) => {
-  res.send({ hi: "there" });
+app.get('/', (req, res) => {
+  res.send({ hi: 'there' });
 });
 ```
 
@@ -215,8 +215,8 @@ To create the authentication flow with `Google` we are gonna be using a library 
 - Then on the server `require` those 2 dependencies. For now we only need `Strategy` from the `passport-google-oauth20`
 
 ```js
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 ```
 
 - Call `passport` and give the `strategy` that you need for the authentication
@@ -267,7 +267,7 @@ passport.use(
     {
       clientID: keys.googleClientIID,
       clientSecret: keys.clientSecret,
-      callbackURL: "/auth/google/callback",
+      callbackURL: '/auth/google/callback',
     },
     (accesToken) => {
       console.log(accesToken);
@@ -282,9 +282,9 @@ We need a `route handler` that triggers when the user wants to authenticate. We 
 
 ```js
 app.get(
-  "/auth/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
+  '/auth/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
   })
 );
 ```
@@ -306,7 +306,7 @@ You will need to wait a couple of minutes to check if it works because Google's 
 Now that we get to the Google login screen we need to create the `route handler` that handles the `callback` URL that the user is redirected after login. For this like the others before we don't use a function to run when we receive a request that matches the pattern of the `route handler`; we use `passport`.
 
 ```js
-app.get("/auth/google/callback", passport.authenticate("google"));
+app.get('/auth/google/callback', passport.authenticate('google'));
 ```
 
 This look like the first `route handler` that we set but the difference is that when you get the request you will receive the `code` that Google sends to you as a `query parameter` so `passport` when it sees this it will know that the user is no trigger the authentication process instead they want to convert this `code` into profile information. So if you test and login at this point we will log a big string on the terminal that is the function that we send on the configuration of the `passport.use` configuration and get on the login page on the browser because we didn't set anything to be redirected.
@@ -321,12 +321,12 @@ passport.use(
     {
       clientID: keys.googleClientIID,
       clientSecret: keys.googleClientSecret,
-      callbackURL: "/auth/google/callback",
+      callbackURL: '/auth/google/callback',
     },
     (accesToken, refreshToken, profile, done) => {
-      console.log("access token", accesToken);
-      console.log("refresh token", refreshToken);
-      console.log("profile:", profile);
+      console.log('access token', accesToken);
+      console.log('refresh token', refreshToken);
+      console.log('profile:', profile);
     }
   )
 );
@@ -470,9 +470,9 @@ Now that we create the `schema` and `mongo` knows that we need a `collection` th
 - First, on the file that we got the `passport` logic(In the case of the example we separate it from the `index.js` to a file called `paasport.js`) we need to get the `model` normally we `require` what we need on the file but for `models classes` we don't gonna be using `require` statement; the reason is that sometimes when you're running your code on a testing environment your `models` will be `require` multiple times using a `require` statement and that will confuse `mongoose` that will belive that you're trying loading multiple `models` with the same name and that will throw an error so we gonna `require` a little bit different.
 
 ```js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const User = mongoose.model("users");
+const User = mongoose.model('users');
 ```
 
 We `require` the `mongoose` module then we use the `model` function with the name of the `collection`(in this example `users`) to pull/fetch from `mongo` that specific `collection`. Previously we use the `model` function to load the `schema` to a `collection` sending 2 parameters so to pull/fetch something like this we use the same function with just one argument.
@@ -490,19 +490,19 @@ We use the `new` keyword on the `collection` that we just fetch sending an objec
 At the end, we create the new `record` using the callback function that is a call at the en of the `passport` authentication process.
 
 ```js
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const mongoose = require("mongoose");
-const keys = require("../config/keys");
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const mongoose = require('mongoose');
+const keys = require('../config/keys');
 
-const User = mongoose.model("users");
+const User = mongoose.model('users');
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: keys.googleClientIID,
       clientSecret: keys.googleClientSecret,
-      callbackURL: "/auth/google/callback",
+      callbackURL: '/auth/google/callback',
     },
     (accessToken, refreshToken, profile) => {
       new User({
@@ -550,7 +550,7 @@ passport.use(
     {
       clientID: keys.googleClientIID,
       clientSecret: keys.googleClientSecret,
-      callbackURL: "/auth/google/callback",
+      callbackURL: '/auth/google/callback',
     },
     (accessToken, refreshToken, profile, done) => {
       User.findOne({ googleId: profile.id }).then((existingUser) => {
@@ -623,8 +623,8 @@ Out of the box `express` doesn't now how to handle cookies so we gonna install a
 Now `require` the `cookie-session` and `passport` modules on the `index.js` file.
 
 ```js
-const cookieSession = require("cookie-session");
-const passport = require("passport");
+const cookieSession = require('cookie-session');
+const passport = require('passport');
 ```
 
 Why `passport`? is beacuase we need to tell `passport` that keep track of the `session` of the user and need to do it using cookies.
@@ -660,19 +660,19 @@ At this moment we complete a process to have cookies and that is added to the `r
 We separate our `routes` in a file called `authRoutes.js` and build an example `route handler` to test that handles the `/api/current_user` endpoint.
 
 ```js
-const passport = require("passport");
+const passport = require('passport');
 
 module.exports = (app) => {
   app.get(
-    "/auth/google",
-    passport.authenticate("google", {
-      scope: ["profile", "email"],
+    '/auth/google',
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
     })
   );
 
-  app.get("/auth/google/callback", passport.authenticate("google"));
+  app.get('/auth/google/callback', passport.authenticate('google'));
 
-  app.get("/api/current_user", (req, res) => {
+  app.get('/api/current_user', (req, res) => {
     res.send(req.user);
   });
 };
@@ -685,7 +685,7 @@ Know go to the `/auth/google` endpoint on your browser and begin the process(We 
 To logout users `passport` attach a `logout` function to the `request` object that we recive on the `route handler`. For this example we use the `/api/logout` endpoint.
 
 ```js
-app.get("/api/logout", (req, res) => {
+app.get('/api/logout', (req, res) => {
   req.logout();
   res.send(req.user);
 });
@@ -807,8 +807,8 @@ Know we are creating 2 new files on the `config` directory one is call `dev.js` 
 module.exports = {
   googleClientID: `your_cliend_id`,
   googleClientSecret: `your_client_secret`,
-  mongoURI: "your_mongo_conection_string",
-  cookieKey: "your_random_string",
+  mongoURI: 'your_mongo_conection_string',
+  cookieKey: 'your_random_string',
 };
 ```
 
@@ -826,10 +826,10 @@ module.exports = {
 Know we gonna update the `key.js` file to choose one of the previews to define files depending on the environment
 
 ```js
-if (process.env.NODE_ENV === "production") {
-  module.exports = require("./prod");
+if (process.env.NODE_ENV === 'production') {
+  module.exports = require('./prod');
 } else {
-  module.exports = require("./dev");
+  module.exports = require('./dev');
 }
 ```
 
@@ -907,12 +907,12 @@ To add a `proxy` on your `client` app just need to follow the next steps:
 - On the `setupProxy.js` file add the following block:
 
   ```js
-  const { createProxyMiddleware } = require("http-proxy-middleware");
+  const { createProxyMiddleware } = require('http-proxy-middleware');
   module.exports = function (app) {
     app.use(
-      ["/api", "/auth/google"],
+      ['/api', '/auth/google'],
       createProxyMiddleware({
-        target: "http://localhost:5000",
+        target: 'http://localhost:5000',
       })
     );
   };
@@ -994,7 +994,7 @@ passport.use(
     {
       clientID: keys.googleClientID,
       clientSecret: keys.googleClientSecret,
-      callbackURL: "/auth/google/callback",
+      callbackURL: '/auth/google/callback',
       proxy: true,
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -1025,8 +1025,8 @@ Now we gonna begin to work on the client-side of our application. Here are the f
 - Import `react` and `react-dom`
 
   ```js
-  import React from "react";
-  import ReactDOM from "react-dom";
+  import React from 'react';
+  import ReactDOM from 'react-dom';
   ```
 
 - Go to the `client/src` directory
@@ -1276,7 +1276,7 @@ To use the `/api/current_user` we will have the following strategy using `Redux`
 
   ```js
   const fetchUser = () => {
-    axios.get("/api/current_user");
+    axios.get('/api/current_user');
   };
   ```
 
@@ -1285,7 +1285,7 @@ To use the `/api/current_user` we will have the following strategy using `Redux`
   ```js
   export const fetchUser = () => {
     return function (dispatch) {
-      axios.get("/api/current_user").then((res) =>
+      axios.get('/api/current_user').then((res) =>
         dispatch({
           type: FETCH_USERS,
           payload: res,
@@ -1367,7 +1367,7 @@ Just add the `async/await` sintax for this.
 
 ```js
 export const fetchUser = () => async (dispatch) => {
-  const res = await axios.get("/api/current_user");
+  const res = await axios.get('/api/current_user');
   dispatch({
     type: FETCH_USERS,
     payload: res,
@@ -1489,8 +1489,8 @@ If you notice if you lunch the authentication process clicking on the `login` li
 
   ```js
   app.get(
-    "/auth/google/callback",
-    passport.authenticate("google"),
+    '/auth/google/callback',
+    passport.authenticate('google'),
     (req, res) => {}
   );
   ```
@@ -1499,10 +1499,10 @@ If you notice if you lunch the authentication process clicking on the `login` li
 
   ```js
   app.get(
-    "/auth/google/callback",
-    passport.authenticate("google"),
+    '/auth/google/callback',
+    passport.authenticate('google'),
     (req, res) => {
-      res.redirect("/surveys");
+      res.redirect('/surveys');
     }
   );
   ```
@@ -1540,11 +1540,11 @@ Now we need to add a component for the `landing` page so we can begin to add ele
 - Add a basic functional component like the following
 
   ```js
-  import React from "react";
+  import React from 'react';
 
   const Landing = () => {
     return (
-      <div style={{ textAlign: "center" }}>
+      <div style={{ textAlign: 'center' }}>
         <h1>Emaily!</h1>
         Collect feedback from your users
       </div>
@@ -1577,7 +1577,7 @@ To handle all the navigation inside of our application we gonna use the `Link` t
 - Add the `to` property with a ternary operator using the `auth` state to decide is the link is `/survey` or `/`
 
   ```js
-  <Link to={this.props.auth ? "/surveys" : "/"} className="left brand-logo">
+  <Link to={this.props.auth ? '/surveys' : '/'} className="left brand-logo">
     Emaily
   </Link>
   ```
@@ -1684,8 +1684,8 @@ Now that we got all the configuration that we need; we can use the `checkout` li
 - Import `React` and the `stripe checkout` modules
 
   ```js
-  import React, { Component } from "react";
-  import StripeCheckout from "react-stripe-checkout";
+  import React, { Component } from 'react';
+  import StripeCheckout from 'react-stripe-checkout';
   ```
 
 - Now create a class component that renders the `StripeCheckout` component and export it
@@ -1792,7 +1792,7 @@ Now we follow the next process:
 
   ```js
   export const handleToken = (token) => async (dispatch) => {
-    const res = await axios.post("/api/stripe", token);
+    const res = await axios.post('/api/stripe', token);
 
     dispatch({
       type: FETCH_USERS,
@@ -1807,8 +1807,8 @@ Now we follow the next process:
 - Import the `connect` function and the `actions`
 
   ```js
-  import { connect } from "react-redux";
-  import * as actions from "../actions";
+  import { connect } from 'react-redux';
+  import * as actions from '../actions';
   ```
 
 - On the `export` statement use the connect function to make available the `actions` on the component
@@ -1838,7 +1838,7 @@ Now we need to create the `endpoint` that will use the `token` to complete the b
 
   ```js
   module.exports = (app) => {
-    app.post("/api/stripe", (req, res) => {});
+    app.post('/api/stripe', (req, res) => {});
   };
   ```
 
@@ -1870,11 +1870,11 @@ On your terminal go to the server directory and install `body-parser`
 - Now we need to use `stripe` to create the charge. On your editor go to the `billingRoutes` file and add the following code in the previous define `route handler`
 
   ```js
-  app.post("/api/stripe", (req, res) => {
+  app.post('/api/stripe', (req, res) => {
     stripe.charges.create({
       amount: 500,
-      currency: "usd",
-      description: "$5 for 5 credits",
+      currency: 'usd',
+      description: '$5 for 5 credits',
       source: req.body.id,
     });
   });
@@ -1888,11 +1888,11 @@ On your terminal go to the server directory and install `body-parser`
 - Finally need to add the `async` keyword since the `create` function is asynchronous
 
   ```js
-  app.post("/api/stripe", async (req, res) => {
+  app.post('/api/stripe', async (req, res) => {
     const charge = await stripe.charges.create({
       amount: 500,
-      currency: "usd",
-      description: "$5 for 5 credits",
+      currency: 'usd',
+      description: '$5 for 5 credits',
       source: req.body.id,
     });
 
@@ -1948,7 +1948,7 @@ On your editor go to the `billingRoutes` file and add the following conditional 
 
 ```js
 if (!req.user) {
-  return res.status(401).send({ error: "You must log in!" });
+  return res.status(401).send({ error: 'You must log in!' });
 }
 ```
 
@@ -1970,7 +1970,7 @@ This logic will be enough for our `route handler` but on this project, we will h
   ```js
   module.exports = (req, res, next) => {
     if (!req.user) {
-      return res.status(401).send({ error: "You must log in!" });
+      return res.status(401).send({ error: 'You must log in!' });
     }
   };
   ```
@@ -1982,7 +1982,7 @@ This logic will be enough for our `route handler` but on this project, we will h
   ```js
   module.exports = (req, res, next) => {
     if (!req.user) {
-      return res.status(401).send({ error: "You must log in!" });
+      return res.status(401).send({ error: 'You must log in!' });
     }
 
     next();
@@ -1995,11 +1995,11 @@ This logic will be enough for our `route handler` but on this project, we will h
 - Finally, we need to add it to our `route handler`. After the `/api/stripe` you can put the name that you just export and delete the condition block that we add before.
 
   ```js
-  app.post("/api/stripe", requireLogin, async (req, res) => {
+  app.post('/api/stripe', requireLogin, async (req, res) => {
     const charge = await stripe.charges.create({
       amount: 500,
-      currency: "usd",
-      description: "$5 for 5 credits",
+      currency: 'usd',
+      description: '$5 for 5 credits',
       source: req.body.id,
     });
 
@@ -2063,8 +2063,8 @@ Now we need to add the logic that will allow our `express` server to handle the 
 - Inside of the condition block we gonna first serve up all the production assets like `main.js` and `maiin.css` files
 
   ```js
-  if (process.env.NODE_ENV === "production") {
-    app.use(express.static("client/build"));
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static('client/build'));
   }
   ```
 
@@ -2073,22 +2073,22 @@ Now we need to add the logic that will allow our `express` server to handle the 
 - Now require a module called `path`
 
   ```js
-  if (process.env.NODE_ENV === "production") {
-    app.use(express.static("client/build"));
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static('client/build'));
 
-    const path = require("path");
+    const path = require('path');
   }
   ```
 
 - Finally, we need to serve the `index.html` is doesn't match with any route or file even in the `client/build` directory. For this, we need to create a `route handler` that response with the `index.html` file
 
   ```js
-  if (process.env.NODE_ENV === "production") {
-    app.use(express.static("client/build"));
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static('client/build'));
 
-    const path = require("path");
-    app.get("*", (req, res) => {
-      res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
+    const path = require('path');
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
     });
   }
   ```
@@ -2251,7 +2251,7 @@ const surveySchema = new Schema({
   recipients: [RecipientSchema],
   yes: { type: Number, default: 0 },
   no: { type: Number, default: 0 },
-  _user: { type: Schema.Types.ObjectId, ref: "User" },
+  _user: { type: Schema.Types.ObjectId, ref: 'User' },
 });
 ```
 
@@ -2269,7 +2269,7 @@ const surveySchema = new Schema({
   recipients: [RecipientSchema],
   yes: { type: Number, default: 0 },
   no: { type: Number, default: 0 },
-  _user: { type: Schema.Types.ObjectId, ref: "User" },
+  _user: { type: Schema.Types.ObjectId, ref: 'User' },
   dateSent: Date,
   lastResponded: Date,
 });
@@ -2293,7 +2293,7 @@ Now that we got our `survey` schema we can begin to work with the first of the `
 
   ```js
   module.exports = (app) => {
-    app.post("/api/surveys", (req, res) => {});
+    app.post('/api/surveys', (req, res) => {});
   };
   ```
 
@@ -2302,10 +2302,10 @@ Now that we got our `survey` schema we can begin to work with the first of the `
 - Then we can add it as part of our `route handler`
 
   ```js
-  const requireLogin = require("../middlewares/requireLogin");
+  const requireLogin = require('../middlewares/requireLogin');
 
   module.exports = (app) => {
-    app.post("/api/surveys", requireLogin, (req, res) => {});
+    app.post('/api/surveys', requireLogin, (req, res) => {});
   };
   ```
 
@@ -2315,7 +2315,7 @@ Now that we got our `survey` schema we can begin to work with the first of the `
   ```js
   module.exports = (req, res, next) => {
     if (req.credits < 1) {
-      return res.status(403).send({ error: "Not enough credits" });
+      return res.status(403).send({ error: 'Not enough credits' });
     }
 
     next();
@@ -2330,7 +2330,7 @@ Why `403` status code? Because is the one that represents at this moment what we
 
   ```js
   module.exports = (app) => {
-    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {});
+    app.post('/api/surveys', requireLogin, requireCredits, (req, res) => {});
   };
   ```
 
@@ -2359,7 +2359,7 @@ We use destructuring to get all the properties that we need from the request bod
 
   ```js
   module.exports = (app) => {
-    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+    app.post('/api/surveys', requireLogin, requireCredits, (req, res) => {
       const { title, subject, body, recipients } = req.body;
 
       const survey = new Survey({
@@ -2377,14 +2377,14 @@ We use destructuring to get all the properties that we need from the request bod
 
   ```js
   module.exports = (app) => {
-    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+    app.post('/api/surveys', requireLogin, requireCredits, (req, res) => {
       const { title, subject, body, recipients } = req.body;
 
       const survey = new Survey({
         title,
         subject,
         body,
-        recipients: recipients.split(",").map((email) => ({
+        recipients: recipients.split(',').map((email) => ({
           email: email.trim(),
         })),
       });
@@ -2398,14 +2398,14 @@ We use destructuring to get all the properties that we need from the request bod
 
   ```js
   module.exports = (app) => {
-    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+    app.post('/api/surveys', requireLogin, requireCredits, (req, res) => {
       const { title, subject, body, recipients } = req.body;
 
       const survey = new Survey({
         title,
         subject,
         body,
-        recipients: recipients.split(",").map((email) => ({
+        recipients: recipients.split(',').map((email) => ({
           email: email.trim(),
         })),
         _user: req.user.id,
@@ -2418,14 +2418,14 @@ We use destructuring to get all the properties that we need from the request bod
 
   ```js
   module.exports = (app) => {
-    app.post("/api/surveys", requireLogin, requireCredits, (req, res) => {
+    app.post('/api/surveys', requireLogin, requireCredits, (req, res) => {
       const { title, subject, body, recipients } = req.body;
 
       const survey = new Survey({
         title,
         subject,
         body,
-        recipients: recipients.split(",").map((email) => ({
+        recipients: recipients.split(',').map((email) => ({
           email: email.trim(),
         })),
         _user: req.user.id,
@@ -2555,7 +2555,7 @@ We did it this way so we can reuse the `Mailer` class for other types of emails,
     constructor({ subject, recipients }, content) {
       super();
 
-      this.from_email = new helper.Email("your_email@example.com");
+      this.from_email = new helper.Email('your_email@example.com');
     }
   }
   ```
@@ -2567,9 +2567,9 @@ We did it this way so we can reuse the `Mailer` class for other types of emails,
     constructor({ subject, recipients }, content) {
       super();
 
-      this.from_email = new helper.Email("your_email@example.com");
+      this.from_email = new helper.Email('your_email@example.com');
       this.subject = subject;
-      this.body = new helper.Content("text/html", content);
+      this.body = new helper.Content('text/html', content);
     }
   }
   ```
@@ -2688,10 +2688,10 @@ Now that we got the `mailer` we can begin to do a basic implementation of it.
 
   ```js
   const survey = {
-    title: "my title",
-    subject: "my subject",
-    recipients: "valid.email@example.com",
-    body: "here is the body of the email",
+    title: 'my title',
+    subject: 'my subject',
+    recipients: 'valid.email@example.com',
+    body: 'here is the body of the email',
   };
   ```
 
@@ -2775,8 +2775,8 @@ If you notice we still have our local URL in the links of the `body` on the `ema
 - Then go to the `surveyRoute` and add the following `route handler`
 
   ```js
-  app.get("/api/surveys/thanks", (req, res) => {
-    res.send("Thanks for voting!");
+  app.get('/api/surveys/thanks', (req, res) => {
+    res.send('Thanks for voting!');
   });
   ```
 
@@ -2794,7 +2794,7 @@ We can continue working on the `route handlers` that still need to do in order t
 - Then create a `Dashboard` component with some text to test and `export` it
 
   ```js
-  import React from "react";
+  import React from 'react';
 
   const Dashboard = () => {
     return <div>Dashboard</div>;
@@ -2883,7 +2883,7 @@ Now that we just spoke about the process and the tools involved with the `survey
 - In this new file create a `class` base component with some example text and export it
 
   ```js
-  import React, { Component } from "react";
+  import React, { Component } from 'react';
 
   class SurveyNew extends Component {
     render() {
@@ -2906,7 +2906,7 @@ At this moment we can begin to create our `form` component and use it on `Survey
 - Inside of the `SurveyForm` file create and export a class base component
 
   ```js
-  import React, { Component } from "react";
+  import React, { Component } from 'react';
 
   class SurveyForm extends Component {
     render() {
@@ -2939,7 +2939,7 @@ At this moment we can begin to create our `form` component and use it on `Survey
 
   ```js
   export default reduxForm({
-    form: "surveyForm",
+    form: 'surveyForm',
   })(SurveyForm);
   ```
 
@@ -3031,7 +3031,7 @@ Now that we have a better idea on how `redux-form` is gonna help us we can begin
 - Create and export a functional component that returns an input
 
   ```js
-  import React from "react";
+  import React from 'react';
 
   export default () => {
     return (
@@ -3136,10 +3136,10 @@ Now that we have a better idea on how `redux-form` is gonna help us we can begin
 
   ```js
   const FIELDS = [
-    { label: "Survey Title", name: "title" },
-    { label: "Subject Line", name: "subject" },
-    { label: "Email body", name: "body" },
-    { label: "Recipient list", name: "emails" },
+    { label: 'Survey Title', name: 'title' },
+    { label: 'Subject Line', name: 'subject' },
+    { label: 'Email body', name: 'body' },
+    { label: 'Recipient list', name: 'emails' },
   ];
   ```
 
@@ -3202,7 +3202,7 @@ We got almost complete our form but is still missing one of the important parts 
   ```js
   export default reduxForm({
     validate,
-    form: "surveyForm",
+    form: 'surveyForm',
   })(SurveyForm);
   ```
 
@@ -3230,7 +3230,7 @@ We got almost complete our form but is still missing one of the important parts 
     const errors = {};
 
     if (!values.title) {
-      errors.title = "You must provide a title";
+      errors.title = 'You must provide a title';
     }
 
     return errors;
@@ -3285,8 +3285,8 @@ When you add the `title` property in the `errors` object `redux-form` automatica
     return (
       <div>
         <label>{label}</label>
-        <input {...input} style={{ marginBottom: "5px" }} />
-        <div className="red-text" style={{ marginBottom: "20px" }}>
+        <input {...input} style={{ marginBottom: '5px' }} />
+        <div className="red-text" style={{ marginBottom: '20px' }}>
           {touched && error}
         </div>
       </div>
@@ -3302,7 +3302,7 @@ When you add the `title` property in the `errors` object `redux-form` automatica
 
     _.each(FIELDS, ({ name }) => {
       if (!values[name]) {
-        errors[name] = "You must provide a value";
+        errors[name] = 'You must provide a value';
       }
     });
 
@@ -3327,7 +3327,7 @@ When you add the `title` property in the `errors` object `redux-form` automatica
 
   ```js
   const invalidEmails = emails
-    .split(",")
+    .split(',')
     .map((email) => email.trim())
     .filter((email) => {
       if (email.length) return re.test(email) === false;
@@ -3350,11 +3350,11 @@ When you add the `title` property in the `errors` object `redux-form` automatica
   function validate(values) {
     const errors = {};
 
-    errors.emails = validateEmails(values.emails || "");
+    errors.emails = validateEmails(values.emails || '');
 
     _.each(FIELDS, ({ name }) => {
       if (!values[name]) {
-        errors[name] = "You must provide a value";
+        errors[name] = 'You must provide a value';
       }
     });
 
@@ -3378,7 +3378,7 @@ On a little side note, we mention that we are gonna use a component level `state
 - On this new file build a component that returns an `h5` with a message
 
   ```js
-  import React from "react";
+  import React from 'react';
 
   const SurveyFormReview = () => {
     return (
@@ -3478,7 +3478,7 @@ As you may notice at this moment each time you are back from the `review` compon
 ```js
 export default reduxForm({
   validate,
-  form: "surveyForm",
+  form: 'surveyForm',
   destroyOnUnmount: false,
 })(SurveyForm);
 ```
@@ -3521,10 +3521,10 @@ Before we dive in on the `SurveyFormReview` we need to be a little change to our
 
   ```js
   export default [
-    { label: "Survey Title", name: "title" },
-    { label: "Subject Line", name: "subject" },
-    { label: "Email body", name: "body" },
-    { label: "Recipient list", name: "emails" },
+    { label: 'Survey Title', name: 'title' },
+    { label: 'Subject Line', name: 'subject' },
+    { label: 'Email body', name: 'body' },
+    { label: 'Recipient list', name: 'emails' },
   ];
   ```
 
@@ -3600,7 +3600,7 @@ return (
 
   ```js
   export const submitSurvey = (values) => {
-    return { type: "submit_survey" };
+    return { type: 'submit_survey' };
   };
   ```
 
@@ -3642,7 +3642,7 @@ We are going the delete form values task first. Like we spoke before we need to 
 
   ```js
   export default reduxForm({
-    form: "surveyForm",
+    form: 'surveyForm',
   })(SurveyNew);
   ```
 
@@ -3659,10 +3659,10 @@ Before we tackle the other task we need to do a little change on the object that
 
   ```js
   export default [
-    { label: "Survey Title", name: "title" },
-    { label: "Subject Line", name: "subject" },
-    { label: "Email body", name: "body" },
-    { label: "Recipient list", name: "recipients" },
+    { label: 'Survey Title', name: 'title' },
+    { label: 'Subject Line', name: 'subject' },
+    { label: 'Email body', name: 'body' },
+    { label: 'Recipient list', name: 'recipients' },
   ];
   ```
 
@@ -3675,7 +3675,7 @@ Now we are in a good position to finish the `submit` buttom after the `user` rev
 
 ```js
 export const submitSurvey = (values) => async (dispatch) => {
-  const res = await axios.post("/api/surveys", values);
+  const res = await axios.post('/api/surveys', values);
 
   dispatch({
     type: FETCH_USERS,
@@ -3705,9 +3705,9 @@ Finally, we can work with the last task of the `survey` creation and send on the
 
   ```js
   export const submitSurvey = (values, history) => async (dispatch) => {
-    const res = await axios.post("/api/surveys", values);
+    const res = await axios.post('/api/surveys', values);
 
-    history.push("/surveys");
+    history.push('/surveys');
 
     dispatch({
       type: FETCH_USERS,
@@ -3760,7 +3760,7 @@ To test the `webhook` we need to set a `route handler` that receives the incomin
 - Create the following `route handler`
 
   ```js
-  app.post("/api/surveys/webhooks", (req, res) => {
+  app.post('/api/surveys/webhooks', (req, res) => {
     console.log(req.body);
     res.send({});
   });
@@ -3864,16 +3864,16 @@ Now we know that we need to process the data of the event object before using th
     ```js
     [
       {
-        email: "example@gmail.com",
-        surveyId: "123456789",
-        choice: "yes",
+        email: 'example@gmail.com',
+        surveyId: '123456789',
+        choice: 'yes',
       },
       undefined,
       undefined,
       {
-        email: "example@gmail.com",
-        surveyId: "123456789",
-        choice: "yes",
+        email: 'example@gmail.com',
+        surveyId: '123456789',
+        choice: 'yes',
       },
     ];
     ```
@@ -3883,14 +3883,14 @@ Now we know that we need to process the data of the event object before using th
   ```js
   [
     {
-      email: "example@gmail.com",
-      surveyId: "123456789",
-      choice: "yes",
+      email: 'example@gmail.com',
+      surveyId: '123456789',
+      choice: 'yes',
     },
     {
-      email: "example@gmail.com",
-      surveyId: "123456789",
-      choice: "yes",
+      email: 'example@gmail.com',
+      surveyId: '123456789',
+      choice: 'yes',
     },
   ];
   ```
@@ -3900,9 +3900,9 @@ Now we know that we need to process the data of the event object before using th
   ```js
   [
     {
-      email: "example@gmail.com",
-      surveyId: "123456789",
-      choice: "yes",
+      email: 'example@gmail.com',
+      surveyId: '123456789',
+      choice: 'yes',
     },
   ];
   ```
@@ -3917,9 +3917,9 @@ At this moment we are a little bit clear on the process that we going to follow 
 - Now import `lodash`, `path-parser` and `URL` library
 
   ```js
-  const _ = require("lodash");
-  const { Path } = require("path-parser");
-  const { URL } = require("url");
+  const _ = require('lodash');
+  const { Path } = require('path-parser');
+  const { URL } = require('url');
   ```
 
   The `URL` library comes from `node`.
@@ -3969,7 +3969,7 @@ Before we continue is a good time to do a refactor on the `webhook` route handle
 - First, move the `Path` instance outside the `map` function since we don't need to specify it in every iteration because will always be the same
 
   ```js
-  const p = new Path("/api/surveys/:surveyId/:choice");
+  const p = new Path('/api/surveys/:surveyId/:choice');
   const events = _.map(req.body, ({ url, email }) => {});
   ```
 
@@ -3998,7 +3998,7 @@ Before we continue is a good time to do a refactor on the `webhook` route handle
       }
     })
     .compact()
-    .uniqBy("email", "surveyId")
+    .uniqBy('email', 'surveyId')
     .value();
   ```
 
@@ -4047,7 +4047,7 @@ So we will have something like this:
 - Then the next piece of query logic is to search on the `recipient subdocument` that have the correct `email` and `responded` is `false`
 
   ```js
-  const email = "example@gmail.com";
+  const email = 'example@gmail.com';
   Survey.findOne({
     id: surveyId,
     recipients: {
@@ -4061,7 +4061,7 @@ At this moment we have a `survey` with a given `id` that have a `recipients` pro
 - At this moment we will find the data send it to our `express` server; updating it and returned to `mongo` but maybe we can find the correct `survey` and update it at the same time that is found inside of our `survey` collection. To do this we gonna use `updateOne` instead of `findOne` that will find the `survey` with the same criteria that we defined before and replace it with an object that we send as a second parameter.
 
   ```js
-  const email = "example@gmail.com";
+  const email = 'example@gmail.com';
   Survey.updateOne(
     {
       id: surveyId,
@@ -4078,8 +4078,8 @@ At this moment we have a `survey` with a given `id` that have a `recipients` pro
 - Now we need to figure out how we are going to update the appropriate `survey`. First, we gonna update the `choice` property
 
   ```js
-  const email = "example@gmail.com";
-  const choice = "yes" || "no";
+  const email = 'example@gmail.com';
+  const choice = 'yes' || 'no';
 
   Survey.updateOne(
     {
@@ -4099,8 +4099,8 @@ At this moment we have a `survey` with a given `id` that have a `recipients` pro
 - Now we need to take the `recipient` that is found and update it
 
   ```js
-  const email = "example@gmail.com";
-  const choice = "yes" || "no";
+  const email = 'example@gmail.com';
+  const choice = 'yes' || 'no';
 
   Survey.updateOne(
     {
@@ -4111,7 +4111,7 @@ At this moment we have a `survey` with a given `id` that have a `recipients` pro
     },
     {
       $inc: { [choice]: 1 },
-      $set: { "recipients.$.responded": true },
+      $set: { 'recipients.$.responded': true },
     }
   );
   ```
@@ -4135,7 +4135,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
       }
     })
     .compact()
-    .uniqBy("email", "surveyId")
+    .uniqBy('email', 'surveyId')
     .value();
   ```
 
@@ -4150,7 +4150,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
       }
     })
     .compact()
-    .uniqBy("email", "surveyId")
+    .uniqBy('email', 'surveyId')
     .each(({ surveyId, email, choice }) => {
       Survey.updateOne(
         {
@@ -4161,7 +4161,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
         },
         {
           $inc: { [choice]: 1 },
-          $set: { "recipients.$.responded": true },
+          $set: { 'recipients.$.responded': true },
         }
       );
     })
@@ -4179,7 +4179,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
       }
     })
     .compact()
-    .uniqBy("email", "surveyId")
+    .uniqBy('email', 'surveyId')
     .each(({ surveyId, email, choice }) => {
       Survey.updateOne(
         {
@@ -4190,7 +4190,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
         },
         {
           $inc: { [choice]: 1 },
-          $set: { "recipients.$.responded": true },
+          $set: { 'recipients.$.responded': true },
         }
       );
     })
@@ -4210,7 +4210,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
       }
     })
     .compact()
-    .uniqBy("email", "surveyId")
+    .uniqBy('email', 'surveyId')
     .each(({ surveyId, email, choice }) => {
       Survey.updateOne(
         {
@@ -4221,7 +4221,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
         },
         {
           $inc: { [choice]: 1 },
-          $set: { "recipients.$.responded": true },
+          $set: { 'recipients.$.responded': true },
         }
       ).exec();
     })
@@ -4244,7 +4244,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
       }
     })
     .compact()
-    .uniqBy("email", "surveyId")
+    .uniqBy('email', 'surveyId')
     .each(({ surveyId, email, choice }) => {
       Survey.updateOne(
         {
@@ -4255,7 +4255,7 @@ Now we think of the `query` that we will use to update our `mongo` database let 
         },
         {
           $inc: { [choice]: 1 },
-          $set: { "recipients.$.responded": true },
+          $set: { 'recipients.$.responded': true },
           lastResponded: new Date(),
         }
       ).exec();
@@ -4266,8 +4266,8 @@ Now we think of the `query` that we will use to update our `mongo` database let 
 - Finally, change the `tank you` route in the `SurveyRoutes` file
 
   ```js
-  app.get("/api/surveys/:surveyId/:choice", (req, res) => {
-    res.send("Thanks for voting!");
+  app.get('/api/surveys/:surveyId/:choice', (req, res) => {
+    res.send('Thanks for voting!');
   });
   ```
 
@@ -4290,7 +4290,7 @@ And we show this for each of it `surveys`. So let get to work!!!!
 - Then we need to make a query to the database to get all the `surveys` of a specific `user`. So we are gonna use the `find` method that just needs to do a configuration object with the field and the match criteria that you need and since this is an asynchronous operation we will need to put the `async/await` keyword
 
   ```js
-  app.get("/api/surveys", requireLogin, async (req, res) => {
+  app.get('/api/surveys', requireLogin, async (req, res) => {
     const surveys = await Survey.find({ _user: req.user.id });
   });
   ```
@@ -4298,7 +4298,7 @@ And we show this for each of it `surveys`. So let get to work!!!!
 - We need to respond with the `surveys` that we found
 
   ```js
-  app.get("/api/surveys", requireLogin, async (req, res) => {
+  app.get('/api/surveys', requireLogin, async (req, res) => {
     const surveys = await Survey.find({ _user: req.user.id });
 
     res.send(surveys);
@@ -4340,7 +4340,7 @@ We already finish with the server-side so we can continue with the client. The f
 
   ```js
   export const fetchSurveys = () => async (dispatch) => {
-    const res = await axios.get("/api/surveys");
+    const res = await axios.get('/api/surveys');
 
     dispatch({ type: FETCH_SURVEYS, payload: res.data });
   };
@@ -4386,9 +4386,9 @@ Now we are going to create the components that we need and wiring up them with `
 - import `react` and `components` from `react`; `connect` from `react-redux` and `fetchSurveys` from our `action` directory
 
   ```js
-  import React, { Component } from "react";
-  import { connect } from "react-redux";
-  import { fetchSurveys } from "../../actions";
+  import React, { Component } from 'react';
+  import { connect } from 'react-redux';
+  import { fetchSurveys } from '../../actions';
   ```
 
 - Now create a class base component call `SurveyList`
@@ -4515,4 +4515,64 @@ On this repository I going to implement a `git workflow` that will allow us to a
 
 Here is a visual representation of the workflow:
 
-![git workflow](/sections_text/img/gitworkflow.png)
+![git workflow](/server/sections_text/img/gitworkflow.png)
+
+## Code formatter and linter
+
+For this repository we are going to add tools that will help us to format the code; to detect potential bugs and give us some information about if our code is difficult to maintain; also this tools will help that each developer that work on this repository follow the same guidelines that we define.
+
+We already did some basic configuration at the beginning on the course phase of the repository but we are going to update that configuration and add some new tools that we need.
+
+### Prettier
+
+`Prettier` is a code formated tool that will help us to ensure that we follow a consistent style of code on the application. This tool will automatically change the code depending on the configuration that you use; in my case, I use `visual studio code` editor and configure that check for a `prettier` configuration file `on save` but I also will add a command that you can manually use on your terminal.
+
+#### Configuration steps
+
+- On your terminal go to the `server` directory
+- Install the `prettier` dependency using: `npm install --save-dev prettier`
+- Now on your editor go to the `server` directory and create a file called: `.prettierrc`
+  `Prettier` automatically search this configuration file to check what rules you add.
+- Add the following configuration object:
+
+  ```js
+  {
+  "tabWidth": 2,
+  "semi": true,
+  "singleQuote": true,
+  "bracketSpacing": true,
+  "arrowParens": "always"
+  }
+  ```
+
+  - `tabWidth`: Specify the number of spaces per indentation level
+  - `semi`: Print a semicolon at the end of the statement
+  - `singleQuote`: Add single quotes instead of double quotes
+  - `bracketSpacing`: Print a space between brackets in object literals
+  - `arrowParens`: Include parentheses around a sole arrow function parameter
+
+- Then add a new file call `.prettierignore` in the `server` directory
+- Add the following list of file that `prettier` will ignore
+
+  ```bash
+  # project
+  node_modules
+  build
+  coverage
+  /client/src/serviceWorker.js
+  ```
+
+- Go to the `packge.json` of the `server` directory
+- Add the following script bellow the `heroku-postbuild` script:
+  `"prettier": "npx prettier --write \"**/*.{js,html}\""`
+
+  This command will allow us to manually run `prettier` in the terminal
+
+- On your terminal go to the `server` directory
+- Use the `prettier` command to test if is working: `npm run prettier`
+- You should have change on your files according to `prettier` rules
+
+##### Notes:
+
+- You can add a different set of rules on the `.prettierrc`. This is just personal choices
+- This will be automated later so make sure that you add the set of rules that you need
