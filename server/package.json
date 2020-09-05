@@ -9,11 +9,13 @@
   },
   "scripts": {
     "start": "node index.js",
-    "server": "nodemon index.js",
+    "server": "nodemon index.js --exec 'npm run eslint-output && node' ",
     "client": "npm run start --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client",
-    "prettier": "npx prettier --write \"**/*.{js,html}\""
+    "prettier": "npx prettier --write \"**/*.{js,html}\"",
+    "lint": "npx eslint --ext js ./",
+    "eslint-output": "eslint-output"
   },
   "author": "",
   "license": "ISC",
@@ -31,6 +33,12 @@
     "stripe": "^8.55.0"
   },
   "devDependencies": {
+    "eslint": "^6.6.0",
+    "eslint-config-node": "^4.1.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-output": "^2.0.3",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
     "nodemon": "^2.0.3",
     "prettier": "^2.1.1"
   }
