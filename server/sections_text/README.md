@@ -4521,7 +4521,7 @@ Here is a visual representation of the workflow:
 
 For this repository we are going to add tools that will help us to format the code; to detect potential bugs and give us some information about if our code is difficult to maintain; also this tools will help that each developer that work on this repository follow the same guidelines that we define.
 
-We already did some basic configuration at the beginning on the course phase of the repository but we are going to update that configuration and add some new tools that we need.
+We already did some basic configuration at the beginning on the course phase of the repository and the `client` side of the application has a pre-build configuration but we are going to update that configuration and add some new tools that we need.
 
 ### Prettier
 
@@ -4576,3 +4576,181 @@ We already did some basic configuration at the beginning on the course phase of 
 
 - You can add a different set of rules on the `.prettierrc`. This is just personal choices
 - This will be automated later so make sure that you add the set of rules that you need
+
+### Eslint
+
+`Eslint` is a tool that depending on rules that we specify identify and report bugs on our code. This will help the developer team to prevent bugs before pushing the change to the repository.
+
+#### Steps to configure eslint on the node/express side
+
+- First you need to be on the `server` directory in your terminal
+- Install the following packages as a dev dependencies: `eslint`, `eslint-config-node`, `eslint-config-prettier`, `eslint-output`, `eslint-plugin-import`, `eslint-plugin-node` using:
+  `npm install --save-dev eslint, eslint-config-node, eslint-config-prettier, eslint-output, eslint-plugin-import, eslint-plugin-node`
+- Now on your editor go to the `server` directory
+- Create the first configuration file call `.eslintrc.json`
+- Add the following code on that file:
+
+  ```json
+  {
+    "extends": [
+      "eslint:recommended",
+      "plugin:import/errors",
+      "plugin:node/recommended",
+      "prettier"
+    ],
+    "rules": {
+      "no-console": 1,
+      "no-unused-vars": 1
+    },
+    "parserOptions": {
+      "ecmaVersion": 2018,
+      "sourceType": "module"
+    },
+    "env": {
+      "es6": true
+    }
+  }
+  ```
+
+  - `extends`: Is the configuration property that extends a set of active rules from a base configuration. You can use a string or an array that specifies the configuration that you need. When we got an `npm` package that exports a set of rules we place the `plugin` prefix on the set of the package name and putting this way you can skip the `eslint-plugin-` prefix of the package.
+    - `eslint:recommended`: Set of rules defined on the `eslint` package that we install. [Here](https://eslint.org/docs/rules/) are the rules
+    - `plugin:import/errors`: Is a plugin that provide the rules for the `import/export` syntax. [Here](https://www.npmjs.com/package/eslint-plugin-import) is the package page
+    - `plugin:node/recommended`: Provide the rules for a `NodeJs` project. [Here](https://www.npmjs.com/package/eslint-plugin-node) is the package page
+    - `prettier`: Set of rules of the code formatter `prettier`. The rules that `eslint` will follow are the same defined on the `.prettierrc` file
+  - `rules`: Property that can extend or override a set of rules. This means that you can enable additional rules; change an inherited rule's severity without changing the base configuration and override options for rules on the base configuration. We can use numbers to define the severity of the rules like is mention below:
+    - `0` or `off`: Disable a rule
+    - `1` or `warm`: To only alert as a `warning`
+    - `2` or `error`: To set the rule as an `error`
+  - `parserOptions`: This option allows us to specify the `JS`. By default `eslint` use `ECMAScript 5` syntax but in this case its override to use `ES6` also we specify the `sourceType` to the that we are going to use `ECMAScript` modules
+  - `env`: This property is set to support the new `ES6` globals
+
+- Now that we got the configuration file we need to create a file called `.eslintignore` to make sure that `eslint` doesn't take some files in consideration
+- Add the following files
+
+  ```js
+  node_modules/
+  client/
+  ```
+
+  We ignore the `client` directory because it already has a pre-build configuration managed by the `create-react-app` local server so for the moment we will leave the `client` take care of its configuration.
+
+- Then go to the `package.json` of the `server` directory
+- Add the following on the `scripts` section
+  `"lint": "npx eslint --ext js ./",`
+
+  This command will enable run `eslint` for the `js` files on the project ignoring the directories specified on the `.eslintignore`
+
+- Go to the `index.js` file and add a `console.log('test')`
+- On your terminal in the `server` directory use: `npm run lint`
+- You should see a warning related to the `console` that you use before
+- Delete the `console` on the `index` file
+
+##### Output eslint messages with nodemon
+
+Since we don't have any tool at the moment that output the logs that `eslint` provide use in the terminal; we are going to do it our self with the help of `nodemon` and `eslint-output`.
+
+- First install `eslint-output` using: `npm install --save-dev eslint-output`
+- Now go to the `packge.json` in the root of the `server` directory
+- Add the following on the `scripts` section: `"eslint-output": "eslint-output"`
+- Update the `server` script like this:
+  `"server": "nodemon index.js --exec 'npm run eslint-output && node' "`
+
+  This will tell `nodemon` to continue watching the `index.js` file but now it will execute the `eslint-output` as the `node` when an update is detected
+
+- Go to your terminal and use `npm run dev` on the `server` directory
+- Go to the `index.js` file and add a `console.log("test")`
+- Check on your terminal that you have the `eslint` output
+- Now go to the `.gitignore` file and add the `tmp/` directory that is the output file of the `eslint-output` module
+- Delete the `console` on the `index` file
+
+#### Add custom eslint configuration to create-react-app
+
+The `client` side of the application use is power by `create-react-app` that has a pre-build `eslint` configuration but we will override this configuration to the user a custom one to have more rules that help us in the development phase. You can extend the custom configuration of `eslint` in `create-react-app` following [this guide](https://create-react-app.dev/docs/setting-up-your-editor/) but we will create a way to override the core configuration of `create-react-app` so we can customize more than the `eslint` configuration. Here are the steps:
+
+- First, on your terminal go to the `client directory`
+- Install the following dev dependencies: `customize-cra`, `eslint-config-node`, `eslint-plugin-import`, `eslint-plugin-react`,`eslint-plugin-react-hooks`, `react-app-rewired`
+  `npm install --save-dev customize-cra eslint-config-node eslint-plugin-import eslint-plugin-react eslint-plugin-react-hooks react-app-rewired`
+- Now on your `scripts` configuration on the `client package.json` update all the `scripts` from `react-scripts` to `react-app-rewired` except the `eject` script
+
+  ```json
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+  },
+  ```
+
+  The `react-app-rewired` package will allow us to change the `webpack` configuration of `create-react-app` without using the `eject` script or do a fork of the pre-build configuration. We don't add this package to the `eject` script because we actually want the pre-build configuration when we finally use it but this will be in the future when we migrate to a new architecture.
+
+- Now we need to create a file call `config-overrides.js` on the root of the `client` directory; that will be the place where we gonna put the custom configuration that we need to `create-react-app` to use
+- Then on the `config-overrides.js` file require the `override` and `useEslintRc` from `customize-cra`
+  `const { override, useEslintRc } = require("customize-cra");`
+
+  The `customize-cra` package has a bunch of functions that will be easier to create the custom configuration that we need and wrap everything in an `override` function that will easily modify the pre-build configuration object
+
+- Now export the `override` function with the `useEslintRc` as a parameter with the path of the custom `eslint` configuration file(we don't have yet we will create after finish with the `config-overrides`) in this case the root of the `client` directory
+  `module.exports = override(useEslintRc("./.eslintrc.json"));`
+- Create a file called `.eslintrc.json` on the root of the `client` directory
+- Add the following configuration to the `.eslintrc.json` file
+
+  ```json
+  {
+    "extends": [
+      "react-app",
+      "plugin:import/errors",
+      "plugin:react/recommended"
+    ],
+    "rules": {
+      "react/prop-types": 0,
+      "no-console": 1,
+      "no-unused-vars": 1,
+      "react-hooks/rules-of-hooks": 2,
+      "react-hooks/exhaustive-deps": 1
+    }
+  }
+  ```
+
+  To see in more detail what the options mean go to the [Steps to configure eslint on the node/express side]() section that have a more deep overview of the configuration; here we will only address the actual rules and packages.
+
+  - `react-app`: Package that have all the pre-build configuration of `create-react-app`
+  - `plugin:import/errors"`: Is a plugin that provide the rules for the `import/export` syntax. [Here](https://www.npmjs.com/package/eslint-plugin-import) is the package page
+  - `plugin:react/recommended"`: Plugin that have a set of `react` specific linting rules for `eslint`. [Here](https://www.npmjs.com/package/eslint-plugin-react) is the package page
+  - `"react/prop-types": 0`: Disable the `proptypes` rule from the `eslint-plugin-react`
+  - `"no-console": 1`: Put a warning for all the `console.log` in the application
+  - `"no-unused-vars": 1`: Put a warning for all the unused variables and constants
+  - `"react-hooks/rules-of-hooks": 2`: Check as an error the `react hooks` rules. [Here](https://reactjs.org/docs/hooks-rules.html) are the official page on this matter
+  - `"react-hooks/exhaustive-deps": 1`: Check the effect dependencies of the hooks and put it as a warning
+
+- Now that we finish with the configuration we need to add a ignore file that `eslint` will use to skip the test in some files called `.eslingignore` on the root in the `client` directory
+- Add on the file this list:
+
+  ```bash
+  config-overrides.js
+  serviceWorker.js
+  ```
+
+- Now we can create the script that we need on the client's `package.json`. In the `scripts` section add the following script
+  `"lint": "npx eslint --ext js src"`
+
+  This will run `eslint` on the `js` files in the source directory in the client
+
+- After the `scripts` configuration add the following:
+
+  ```json
+  "eslintConfig": {
+    "root": true
+  }
+  ```
+
+  By default `eslint` search the configuration file on the parent folder up to the `root` directory but with this configuration, `eslint` will stop when it finds the `root` property as `true` so we can have out custom `client` configuration separate from the one in the backend side
+
+- Go to the `components/Header.js` file
+- Add a `console.log` in that file and save the update
+- On your terminal and go to the `client` directory
+- Run the `lint` script: `npm run lint`
+- You should see a warning related to the `console` that you use before
+- On the terminal; go to the `server` directory
+- Run the project with `npm run dev`
+- In the output in the terminal, you should see the same warning that you see before. Since we have `webpack` in the `client` it will be in charge of output this `eslint` warning and that proof that our custom configuration works
+- Delete the `console` that you add before
