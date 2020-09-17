@@ -4754,3 +4754,86 @@ The `client` side of the application use is power by `create-react-app` that has
 - Run the project with `npm run dev`
 - In the output in the terminal, you should see the same warning that you see before. Since we have `webpack` in the `client` it will be in charge of output this `eslint` warning and that proof that our custom configuration works
 - Delete the `console` that you add before
+
+## Continous integration
+
+At this phase of the project, I gonna continue automating some of the processes that we already do manually so this means that we are going to integrate to our repository some configuration to automate all those processes. Since we use `Github` we are going to use [Github actions](https://docs.github.com/en/actions) to help us with this process.
+
+The process that we intend to automate are:
+
+- Run eslint on each `pull request` creation against `master`
+- Run the test of the application on each `pull request` creation against `master`(a task for the future)
+- Deploy the app to `Heroku` on each `release` creation
+- Update the `package.json` version on each `release` creation
+
+### Run eslint using GitHub actions
+
+The first process that I will implement is run the linter in using actions on each `pull request` creation to check if we got errors or warning before merging with `master`.
+
+#### Test locally github actions
+
+I use a tool to help to test the `actions` without the need to upload my configuration to `Github` call [act](https://github.com/nektos/act). You just need to follow the instructions on its repository and install [Docker](https://www.docker.com/).
+
+#### Github actions
+
+[Gihub actions](https://docs.github.com/en/actions/learn-github-actions/introduction-to-github-actions) help us to automate processes on the development cycle running a series of commands after a `Github event`(such as create a `pull request`) has occurred. Here are the parts that are involved with `Github action`
+
+- Workflow: Is the automated process that you add to your repository and are made of jobs that will be triggered by an event
+- Events: A specific event that occurs on `Github` that triggers an action. [Here](https://docs.github.com/en/actions/reference/events-that-trigger-workflows) are a references on `events`
+- Jobs: The steps that are executed on a runner. A workflow can run more than one job a the same time and can run more than one job sequentially
+- Steps: Individual task that you can run a command(action)
+- Actions: Are an individual command that is used on the steps
+- Runners: Is a server with the `Github actions` application runner installed
+
+#### Steps to run eslint with GitHub actions
+
+- On the root directory inside of the `.github` folder(need to create this directory if you don't have it) create a new directory call `workflows`. `Github` will automatically look for this directory to search for a `workflow` that will to the process that we will configure
+- Inside of the workflow directory create a file called `linter.yml`
+- On the top of the `linter.yml` file add the `name` that represent the `workflow`
+  `name: Eslint Continuous Integration`
+
+  This name will be used on the `Github action` section to represent that `workflow`
+
+- Now we need to define an event on where the `workflow` will be triggered
+
+  ```yaml
+  on:
+    pull_request:
+      branches: [master]
+  ```
+
+  - `on:` => This will define the name of the `event` that will trigger the `workflow`. Can be a single event or an array
+  - `pull_request:` => The name of the event that will trigger the `workflow` in this case will be trigger on any activity on a `pull request` and since we need to specify the type of activity we add `:`
+  - `branches: [ master ]` => Specify that only activity related to the `master` branch will be run the `workflow`
+
+- Now we need to specify the `job` that we need to run using `jobs:`
+- Bellow the `jobs:` keyword we specify our `steps`. First to run `eslint` on the `backend` of our application
+
+  ```yaml
+  jobs:
+    run_eslint_on_server:
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          working-directory: ./server
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-node@v1
+          with:
+            node-version: 10.*
+        - run: npm install
+        - run: npm run lint
+  ```
+
+  - `run_eslint_on_server:` => Name of the steps that we are running.
+  - `runs-on: ubuntu-latest` => Especify the type of machine to run the job. Can be one from `Github` or a `self-hosted`. [Here](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on) are the list of runners avilable and some more details
+  - `defaults:` => A map of configuration that apply to a job or to all jobs. In this case we use a individual `default` configuration to each job
+  - `run:` => Run a command-line using the operating system shell
+  - `working-directory: ./server` => Specify the directoy where to run the commands
+  - `steps:` => Specify the sequence of `steps` that the `job` will run
+  - `- uses: actions/checkout@v2` => The `uses` keyword selects an `action` an run as a part of a step in the job. In this case, we are using [actions/checkout@v2](https://github.com/actions/checkout) to take the code in the repository and put it into[GITHUB_WORKSPACE](https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables) that is the workspace directory.
+  - `- uses: actions/setup-node@v1` => Use the [uses: actions/setup-node@v1](https://github.com/actions/setup-node) action to setup node in your workflow enviroment
+  - `with:` => Define a `map` of parameters that will be avilable on the action. In this case is we send the `node` version to `actions/setup-node@v1`
+  - `node-version: 10.*` => `Node` version that we send to `actions/setup-node@v1`
+  - `run: npm install` => Run the `install` command of `node` to install all dependecies defined on the `package.json`
+  - `- run: npm run lint` => Run the custom `eslint` command
