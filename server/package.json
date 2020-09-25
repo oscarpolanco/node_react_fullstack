@@ -17,6 +17,11 @@
     "lint": "npx eslint --ext js ./",
     "eslint-output": "eslint-output"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -39,7 +44,9 @@
     "eslint-output": "^2.0.3",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-node": "^11.1.0",
+    "husky": "^4.2.5",
     "nodemon": "^2.0.3",
-    "prettier": "^2.1.1"
+    "prettier": "^2.1.1",
+    "pretty-quick": "^3.0.0"
   }
 }

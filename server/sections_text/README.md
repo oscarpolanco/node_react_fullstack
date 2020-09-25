@@ -4577,6 +4577,35 @@ We already did some basic configuration at the beginning on the course phase of 
 - You can add a different set of rules on the `.prettierrc`. This is just personal choices
 - This will be automated later so make sure that you add the set of rules that you need
 
+### Husky and pretty-quick
+
+`Husky` is a package that will help us to manage a certain moment on the `git` flow like to run a certain `script` before `commit` changes or before the `push` changes. `Husky` use hooks that represent this moment on time and you can take advantage of it; in our case, we will run `prettier` when you create a `commit`
+
+#### Steps to configure Husky
+
+- On your terminal go to the `server` directory
+- Install the `husky` and `pretty-quick` as a `dev` dependency
+  `npm install --save-dev husky pretty-quick`
+
+  The `pretty-quick` dependency is a dependency that runs `prettier` on the changes files.
+
+- Now on your editor go to the `package.json` in the `server` directory
+- Bellow the `scripts` section add this new propety:
+
+  ```js
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  }
+  ```
+
+  Here you as you may realize we will add the configuration of `husky`. We only are gonna use the `hooks` property and will set it to run the `pretty-quick` module before creating a `commit`. In other words when you `add` your files and try to `commit` the changes `husky` will run before the commit is finish calling `pretty-quick` that has the `--staged` flag that means that all the staged file will be formatted by `prettier` and they will be re-staged after formating. Now before after you create the `commit` message and press enter you will see a little information of the task that `husky` and `pretty-quick` did
+
+##### Note:
+
+- `Pretty-quick` will respect your `.prettierrc` configuration if it exist
+
 ### Eslint
 
 `Eslint` is a tool that depending on rules that we specify identify and report bugs on our code. This will help the developer team to prevent bugs before pushing the change to the repository.
